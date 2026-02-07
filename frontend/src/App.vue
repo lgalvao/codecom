@@ -79,21 +79,28 @@ const complexityOptions = [
 
 <template>
   <div class="h-100 d-flex flex-column">
-    <BNavbar toggleable="lg" type="dark" variant="dark" class="px-3 border-bottom border-secondary">
-      <BNavbarBrand href="#">
+    <BNavbar toggleable="lg" :type="theme" :variant="theme" class="px-3 border-bottom border-secondary">
+      <BNavbarBrand href="#" :class="theme === 'dark' ? 'text-white' : 'text-dark'">
         <Code class="me-2" />
         CodeCom
       </BNavbarBrand>
       
       <div class="ms-auto d-flex align-items-center gap-3">
-        <label for="lod-select" class="text-white-50 small mb-0">Level of Detail:</label>
-        <BFormSelect id="lod-select" v-model="complexity" :options="complexityOptions" size="sm" class="bg-dark text-white border-secondary" style="width: 150px;" />
+        <label for="lod-select" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="small mb-0">Level of Detail:</label>
+        <BFormSelect 
+          id="lod-select" 
+          v-model="complexity" 
+          :options="complexityOptions" 
+          size="sm" 
+          :class="theme === 'dark' ? 'bg-dark text-white border-secondary' : 'bg-light text-dark border-secondary'" 
+          style="width: 150px;" 
+        />
         
-        <BButton variant="link" class="p-0 text-white-50" @click="toggleTheme">
+        <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
           <Sun v-if="theme === 'dark'" :size="20" />
           <Moon v-else :size="20" />
         </BButton>
-        <Settings variant="link" class="text-white-50 cursor-pointer" :size="20" />
+        <Settings variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="cursor-pointer" :size="20" />
       </div>
     </BNavbar>
 

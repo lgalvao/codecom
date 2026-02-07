@@ -19,7 +19,7 @@ echo "🚀 Starting CodeCom..."
 # Start Backend
 echo "📦 Starting Spring Boot Backend with Hot-Reload (DevTools)..."
 cd backend
-mvn spring-boot:run -Dspring-boot.run.fork=true > ../backend.log 2>&1 &
+./gradlew bootRun > ../backend.log 2>&1 &
 BACKEND_PID=$!
 cd ..
 
