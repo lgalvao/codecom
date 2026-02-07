@@ -20,7 +20,6 @@ import java.util.List;
 public class AnalysisService {
 
     private static final String TYPE_CLASS = "CLASS";
-    private static final String TYPE_FUNCTION = "FUNCTION";
     private static final String TYPE_METHOD = "METHOD";
 
     private static final String CAT_CORE = "CORE";
@@ -48,8 +47,9 @@ public class AnalysisService {
         List<SymbolInfo> symbols = new ArrayList<>();
         ParseResult<CompilationUnit> result = javaParser.parse(content);
 
-        if (result.isSuccessful() && result.getResult().isPresent()) {
-            CompilationUnit cu = result.getResult().get();
+        java.util.Optional<CompilationUnit> cuOpt = result.getResult();
+        if (result.isSuccessful() && cuOpt.isPresent()) {
+            CompilationUnit cu = cuOpt.get();
             cu.accept(new VoidVisitorAdapter<List<SymbolInfo>>() {
                 @Override
                 public void visit(ClassOrInterfaceDeclaration n, List<SymbolInfo> arg) {

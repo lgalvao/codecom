@@ -25,7 +25,7 @@ cd ..
 
 # Wait for backend to be ready (optional check)
 echo "⌛ Waiting for backend to initialize..."
-sleep 5
+sleep 0.1
 
 # Start Frontend
 echo "🌐 Starting Vue Frontend (Port 5173)..."
