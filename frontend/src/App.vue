@@ -1,11 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect } from 'bootstrap-vue-next';
 import { Sun, Moon, FolderOpen, Code, Settings } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import OutlineView from './components/OutlineView.vue';
+import { getOutline as getFrontendOutline } from './services/AnalysisService';
 
 const theme = ref('dark');
 const fileTree = ref(null);
@@ -13,6 +14,13 @@ const selectedFile = ref(null);
 const fileContent = ref('');
 const symbols = ref([]);
 const isLoading = ref(false);
+const complexity = ref('standard');
+
+const complexityOptions = [
+  { text: 'Simplified', value: 'simplified' },
+  { text: 'Standard', value: 'standard' },
+  { text: 'Architectural', value: 'architectural' }
+];
 
 const toggleTheme = () => {
   theme.value = theme.value === 'dark' ? 'light' : 'dark';
@@ -34,12 +42,16 @@ const handleFileSelect = async (node) => {
   isLoading.value = true;
   symbols.value = [];
   try {
-    const [contentRes, outlineRes] = await Promise.all([
-      axios.get(`http://localhost:8080/api/files/content?path=${encodeURIComponent(node.path)}`, { responseType: 'text' }),
-      axios.get(`http://localhost:8080/api/analysis/outline?path=${encodeURIComponent(node.path)}`)
-    ]);
+    const contentRes = await axios.get(`http://localhost:8080/api/files/content?path=${encodeURIComponent(node.path)}`, { responseType: 'text' });
     fileContent.value = contentRes.data;
-    symbols.value = outlineRes.data;
+
+    const extension = node.name.split('.').pop().toLowerCase();
+    if (['js', 'ts', 'tsx'].includes(extension)) {
+      symbols.value = await getFrontendOutline(fileContent.value, node.path);
+    } else {
+      const outlineRes = await axios.get(`http://localhost:8080/api/analysis/outline?path=${encodeURIComponent(node.path)}`);
+      symbols.value = outlineRes.data;
+    }
   } catch (error) {
     fileContent.value = 'Error loading file content: ' + error.message;
   } finally {
@@ -47,15 +59,44 @@ const handleFileSelect = async (node) => {
   }
 };
 
+const filteredSymbols = computed(() => {
+  if (complexity.value === 'standard') return symbols.value;
+  
+  if (complexity.value === 'simplified') {
+    return symbols.value.filter(s => s.category !== 'BOILERPLATE');
+  }
+  
+  if (complexity.value === 'architectural') {
+    return symbols.value.filter(s => s.category === 'ARCHITECTURE' || s.type === 'CLASS');
+  }
+  
+  return symbols.value;
+});
+
+const hiddenLines = computed(() => {
+  if (complexity.value === 'standard') return new Set();
+  
+  const lines = new Set();
+  symbols.value.forEach(s => {
+    if (complexity.value === 'simplified' && s.category === 'BOILERPLATE') {
+      lines.add(s.line);
+    } else if (complexity.value === 'architectural' && s.category !== 'ARCHITECTURE' && (s.type === 'CLASS' || s.type === 'INTERFACE')) {
+      lines.add(s.line);
+    }
+  });
+  return lines;
+});
+
 const handleSymbolSelect = (symbol) => {
+  const lineNum = symbol.line;
   const editor = document.querySelector('.shiki-container pre');
   if (editor) {
     const lines = editor.querySelectorAll('.line');
-    if (lines[symbol.line - 1]) {
-      lines[symbol.line - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      lines[symbol.line - 1].classList.add('highlight-line');
+    if (lines[lineNum - 1]) {
+      lines[lineNum - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      lines[lineNum - 1].classList.add('highlight-line');
       setTimeout(() => {
-        lines[symbol.line - 1].classList.remove('highlight-line');
+        lines[lineNum - 1].classList.remove('highlight-line');
       }, 2000);
     }
   }
@@ -67,14 +108,6 @@ onMounted(() => {
   document.documentElement.dataset.bsTheme = theme.value;
   fetchTree();
 });
-
-const complexity = ref('standard');
-const complexityOptions = [
-  { text: 'Simplified', value: 'simplified' },
-  { text: 'Standard', value: 'standard' },
-  { text: 'Architectural', value: 'architectural' }
-];
-
 </script>
 
 <template>
@@ -117,10 +150,12 @@ const complexityOptions = [
           </BButton>
         </div>
         <div class="flex-grow-1 p-0 overflow-auto">
-          <output v-if="!fileTree" class="text-muted small p-3 d-block text-center">
-            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-            Loading...
-          </output>
+          <template v-if="!fileTree">
+            <div class="text-muted small p-3 d-flex flex-column align-items-center">
+              <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+              <span>Connecting to backend...</span>
+            </div>
+          </template>
           <FileTreeNode v-else :node="fileTree" @select="handleFileSelect" />
         </div>
       </div>
@@ -133,12 +168,15 @@ const complexityOptions = [
            </span>
         </div>
         <div class="flex-grow-1 p-0 overflow-hidden editor-bg position-relative d-flex">
-          <div v-if="!selectedFile" class="welcome-screen text-center my-5 py-5 w-100">
-            <Code :size="64" class="text-muted mb-4" />
-            <h2 class="display-6">Welcome to CodeCom</h2>
-            <p class="text-muted lead">Smart code comprehension with Spring Boot & Vue 3</p>
-            <div class="mt-4">
-              <p class="small text-muted">Select a file from the explorer to begin or use the LoD controls above to adjust visibility.</p>
+          <div v-if="!selectedFile" class="welcome-screen d-flex flex-column align-items-center justify-content-center w-100 p-5">
+            <Code :size="64" class="text-muted mb-4 opacity-25" />
+            <h2 class="display-6 fw-bold">CodeCom</h2>
+            <p class="text-muted lead">Smart code comprehension with Level of Detail toggles</p>
+            <div class="mt-4 p-4 border border-secondary rounded bg-dark bg-opacity-10" style="max-width: 500px">
+              <p class="small text-muted mb-0 text-start">
+                <Settings :size="14" class="me-2" /> Select a Java or JS/TS file to see it in action. <br>
+                <Sun :size="14" class="me-2" /> Use the LoD selector above to filter boilerplate or focus on architecture.
+              </p>
             </div>
           </div>
           <template v-else>
@@ -147,16 +185,20 @@ const complexityOptions = [
                  :code="fileContent" 
                  :filename="selectedFile.name" 
                  :theme="theme" 
+                 :hidden-lines="hiddenLines"
                />
             </div>
             <!-- Outline Sidebar -->
-            <div class="outline-sidebar border-start d-flex flex-column" style="width: 220px; background-color: var(--sidebar-bg);">
-              <div class="p-2 border-bottom d-flex align-items-center">
-                <Settings :size="14" class="me-2 text-muted" />
-                <span class="fw-bold xx-small">OUTLINE</span>
+            <div class="outline-sidebar border-start d-flex flex-column" style="width: 250px; background-color: var(--sidebar-bg);">
+              <div class="p-2 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                  <Code :size="14" class="me-2 text-muted" />
+                  <span class="fw-bold xx-small ls-1">OUTLINE</span>
+                </div>
+                <span class="badge bg-dark text-muted p-1 xx-small">{{ filteredSymbols.length }} symbols</span>
               </div>
               <div class="flex-grow-1 overflow-auto">
-                <OutlineView :symbols="symbols" @select="handleSymbolSelect" />
+                <OutlineView :symbols="filteredSymbols" @select="handleSymbolSelect" />
               </div>
             </div>
           </template>
@@ -179,13 +221,18 @@ const complexityOptions = [
 .xx-small {
   font-size: 0.7rem;
 }
+.ls-1 {
+  letter-spacing: 1px;
+}
 @keyframes highlight {
   0% { background-color: rgba(255, 255, 0, 0.3); }
   100% { background-color: transparent; }
 }
 .highlight-line {
-  animation: highlight 2s ease-out;
+  animation: highlight 3s ease-out;
   display: block;
   width: 100%;
+  position: relative;
+  z-index: 10;
 }
 </style>

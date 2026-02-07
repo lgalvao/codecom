@@ -14,6 +14,10 @@ const props = defineProps({
   theme: {
     type: String,
     default: 'github-dark'
+  },
+  hiddenLines: {
+    type: Set,
+    default: () => new Set()
   }
 });
 
@@ -58,7 +62,16 @@ const updateHighlighting = async () => {
   try {
     highlightedCode.value = highlighter.codeToHtml(props.code, {
       lang: lang,
-      theme: props.theme === 'dark' ? 'github-dark' : 'github-light'
+      theme: props.theme === 'dark' ? 'github-dark' : 'github-light',
+      transformers: [
+        {
+          line(node, line) {
+            if (props.hiddenLines.has(line)) {
+              this.addClassToHast(node, 'line-faded');
+            }
+          }
+        }
+      ]
     });
   } catch (err) {
     console.error('Highlighting error:', err);
@@ -76,7 +89,7 @@ onMounted(async () => {
   updateHighlighting();
 });
 
-watch([() => props.code, () => props.filename, () => props.theme], () => {
+watch([() => props.code, () => props.filename, () => props.theme, () => props.hiddenLines], () => {
   updateHighlighting();
 });
 </script>
@@ -111,5 +124,16 @@ watch([() => props.code, () => props.filename, () => props.theme], () => {
 
 .code-viewer {
   background-color: var(--editor-bg);
+}
+
+.line {
+  transition: opacity 0.3s ease;
+}
+
+.line-faded {
+  opacity: 0.15;
+  filter: blur(0.5px);
+  pointer-events: none; /* Disable interaction with faded lines */
+  user-select: none;    /* Prevent selection of faded lines */
 }
 </style>

@@ -4,5 +4,6 @@ public record SymbolInfo(
     String name,
     String type, // e.g., "CLASS", "METHOD", "FUNCTION"
     int line,
-    int column
+    int column,
+    String category // e.g., "CORE", "BOILERPLATE", "ARCHITECTURE"
 ) {}
