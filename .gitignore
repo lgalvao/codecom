@@ -1,0 +1,34 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.settings/
+.project
+.classpath
+.factorypath
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.npm-cache/
+frontend/.npmrc
+*.local
+
+# Maven / Backend
+backend/target/
+backend/data/
+backend/bin/
+*.jar
+*.war
+*.ear
+backend.log
+
+# Temporary files
+tmp/
+temp/

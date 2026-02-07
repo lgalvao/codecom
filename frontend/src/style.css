@@ -1,0 +1,29 @@
+:root {
+  --bg-primary: #ffffff;
+  --text-primary: #212529;
+  --sidebar-bg: #f8f9fa;
+  --border-color: #dee2e6;
+  --editor-bg: #ffffff;
+}
+
+[data-bs-theme='dark'] {
+  --bg-primary: #1e1e1e;
+  --text-primary: #d4d4d4;
+  --sidebar-bg: #252526;
+  --border-color: #3e3e3e;
+  --editor-bg: #1e1e1e;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s, color 0.3s;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+}
