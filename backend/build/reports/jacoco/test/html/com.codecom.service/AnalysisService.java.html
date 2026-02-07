@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalysisService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">codecom-backend</a> &gt; <a href="index.source.html" class="el_package">com.codecom.service</a> &gt; <span class="el_source">AnalysisService.java</span></div><h1>AnalysisService.java</h1><pre class="source lang-java linenums">package com.codecom.service;
+
+import com.codecom.dto.SymbolInfo;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@Service
+<span class="fc" id="L15">public class AnalysisService {</span>
+
+    private static final String TYPE_CLASS = &quot;CLASS&quot;;
+    private static final String TYPE_FUNCTION = &quot;FUNCTION&quot;;
+    private static final String TYPE_METHOD = &quot;METHOD&quot;;
+
+    public List&lt;SymbolInfo&gt; getOutline(String path) throws IOException {
+<span class="fc" id="L22">        String content = Files.readString(Path.of(path));</span>
+<span class="fc" id="L23">        String extension = getExtension(path);</span>
+
+<span class="fc bfc" id="L25" title="All 3 branches covered.">        return switch (extension) {</span>
+<span class="fc" id="L26">            case &quot;java&quot; -&gt; extractJavaSymbols(content);</span>
+<span class="fc" id="L27">            case &quot;js&quot;, &quot;ts&quot;, &quot;vue&quot; -&gt; extractJsSymbols(content);</span>
+<span class="fc" id="L28">            default -&gt; new ArrayList&lt;&gt;();</span>
+        };
+    }
+
+    private String getExtension(String path) {
+<span class="fc" id="L33">        int lastDot = path.lastIndexOf('.');</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        return lastDot == -1 ? &quot;&quot; : path.substring(lastDot + 1).toLowerCase();</span>
+    }
+
+    private List&lt;SymbolInfo&gt; extractJavaSymbols(String content) {
+<span class="fc" id="L38">        List&lt;SymbolInfo&gt; symbols = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L39">        String[] lines = content.split(&quot;\n&quot;);</span>
+
+        // Simple regex for classes and methods
+<span class="fc" id="L42">        Pattern classPattern = Pattern.compile(&quot;(?:public|protected|private|static|\\s) +class +(\\w+)&quot;);</span>
+<span class="fc" id="L43">        Pattern methodPattern = Pattern.compile(&quot;(?:public|protected|private|static|\\s) +[\\w&lt;&gt;\\[\\]]+ +(\\w+) *\\(&quot;);</span>
+
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        for (int i = 0; i &lt; lines.length; i++) {</span>
+<span class="fc" id="L46">            String line = lines[i];</span>
+            
+<span class="fc" id="L48">            Matcher classMatcher = classPattern.matcher(line);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            if (classMatcher.find()) {</span>
+<span class="fc" id="L50">                symbols.add(new SymbolInfo(classMatcher.group(1), TYPE_CLASS, i + 1, classMatcher.start(1)));</span>
+<span class="fc" id="L51">                continue;</span>
+            }
+
+<span class="fc" id="L54">            Matcher methodMatcher = methodPattern.matcher(line);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            if (methodMatcher.find()) {</span>
+<span class="fc" id="L56">                String name = methodMatcher.group(1);</span>
+<span class="pc bpc" id="L57" title="4 of 8 branches missed.">                if (!name.equals(&quot;if&quot;) &amp;&amp; !name.equals(&quot;for&quot;) &amp;&amp; !name.equals(&quot;while&quot;) &amp;&amp; !name.equals(&quot;switch&quot;)) {</span>
+<span class="fc" id="L58">                    symbols.add(new SymbolInfo(name, TYPE_METHOD, i + 1, methodMatcher.start(1)));</span>
+                }
+            }
+        }
+<span class="fc" id="L62">        return symbols;</span>
+    }
+
+    private List&lt;SymbolInfo&gt; extractJsSymbols(String content) {
+<span class="fc" id="L66">        List&lt;SymbolInfo&gt; symbols = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L67">        String[] lines = content.split(&quot;\n&quot;);</span>
+
+        // Simpler patterns to reduce regex engine depth
+<span class="fc" id="L70">        Pattern funcPattern1 = Pattern.compile(&quot;(?:function|const|let|var) +(\\w+) *= *(?:async *)?function&quot;);</span>
+<span class="fc" id="L71">        Pattern funcPattern2 = Pattern.compile(&quot;function +(\\w+) *\\(&quot;);</span>
+<span class="fc" id="L72">        Pattern funcPattern3 = Pattern.compile(&quot;(?:const|let|var) +(\\w+) *= *(?:async *)?\\(.*?\\) *=&gt;&quot;);</span>
+<span class="fc" id="L73">        Pattern classPattern = Pattern.compile(&quot;class +(\\w+)&quot;);</span>
+
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        for (int i = 0; i &lt; lines.length; i++) {</span>
+<span class="fc" id="L76">            String line = lines[i];</span>
+            
+<span class="fc" id="L78">            checkMatch(line, classPattern, symbols, TYPE_CLASS, i + 1);</span>
+<span class="fc" id="L79">            checkMatch(line, funcPattern1, symbols, TYPE_FUNCTION, i + 1);</span>
+<span class="fc" id="L80">            checkMatch(line, funcPattern2, symbols, TYPE_FUNCTION, i + 1);</span>
+<span class="fc" id="L81">            checkMatch(line, funcPattern3, symbols, TYPE_FUNCTION, i + 1);</span>
+        }
+<span class="fc" id="L83">        return symbols;</span>
+    }
+
+    private void checkMatch(String line, Pattern p, List&lt;SymbolInfo&gt; symbols, String type, int lineNum) {
+<span class="fc" id="L87">        Matcher m = p.matcher(line);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (m.find()) {</span>
+<span class="fc" id="L89">            symbols.add(new SymbolInfo(m.group(1), type, lineNum, m.start(1)));</span>
+        }
+<span class="fc" id="L91">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

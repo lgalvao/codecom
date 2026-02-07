@@ -43,6 +43,7 @@ public class FileSystemService {
                 .filter(f -> !f.getName().startsWith(".")) 
                 .filter(f -> !f.getName().equals("node_modules"))
                 .filter(f -> !f.getName().equals("target"))
+                .filter(f -> !f.getName().endsWith(".db"))
                 .map(this::buildNode)
                 .sorted((n1, n2) -> {
                     if (n1.isDirectory() && !n2.isDirectory()) return -1;

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileSystemService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">codecom-backend</a> &gt; <a href="index.source.html" class="el_package">com.codecom.service</a> &gt; <span class="el_source">FileSystemService.java</span></div><h1>FileSystemService.java</h1><pre class="source lang-java linenums">package com.codecom.service;
+
+import com.codecom.dto.FileNode;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+@Service
+<span class="fc" id="L15">public class FileSystemService {</span>
+
+    public FileNode getFileTree(String rootPath) {
+<span class="fc" id="L18">        File root = new File(rootPath);</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        if (!root.exists()) {</span>
+<span class="fc" id="L20">            throw new IllegalArgumentException(&quot;Path does not exist: &quot; + rootPath);</span>
+        }
+<span class="fc" id="L22">        return buildNode(root);</span>
+    }
+
+    private FileNode buildNode(File file) {
+<span class="fc" id="L26">        boolean isDirectory = file.isDirectory();</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        List&lt;FileNode&gt; children = isDirectory ? scanDirectory(file) : null;</span>
+<span class="fc" id="L28">        String name = resolveNodeName(file);</span>
+
+<span class="fc" id="L30">        return new FileNode(</span>
+            name,
+<span class="fc" id="L32">            file.getAbsolutePath(),</span>
+            isDirectory,
+            children
+        );
+    }
+
+    private List&lt;FileNode&gt; scanDirectory(File file) {
+<span class="fc" id="L39">        File[] files = file.listFiles();</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (files == null) return new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L42">        return Arrays.stream(files)</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">                .filter(f -&gt; !f.getName().startsWith(&quot;.&quot;)) </span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">                .filter(f -&gt; !f.getName().equals(&quot;node_modules&quot;))</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">                .filter(f -&gt; !f.getName().equals(&quot;target&quot;))</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">                .filter(f -&gt; !f.getName().endsWith(&quot;.db&quot;))</span>
+<span class="fc" id="L47">                .map(this::buildNode)</span>
+<span class="fc" id="L48">                .sorted((n1, n2) -&gt; {</span>
+<span class="pc bpc" id="L49" title="2 of 4 branches missed.">                    if (n1.isDirectory() &amp;&amp; !n2.isDirectory()) return -1;</span>
+<span class="nc bnc" id="L50" title="All 4 branches missed.">                    if (!n1.isDirectory() &amp;&amp; n2.isDirectory()) return 1;</span>
+<span class="nc" id="L51">                    return n1.name().compareToIgnoreCase(n2.name());</span>
+                })
+<span class="fc" id="L53">                .toList();</span>
+    }
+
+    private String resolveNodeName(File file) {
+<span class="fc" id="L57">        String name = file.getName();</span>
+<span class="pc bpc" id="L58" title="3 of 6 branches missed.">        if (!name.isEmpty() &amp;&amp; !name.equals(&quot;.&quot;) &amp;&amp; !name.equals(&quot;..&quot;)) {</span>
+<span class="fc" id="L59">            return name;</span>
+        }
+        try {
+<span class="nc" id="L62">            return file.getCanonicalFile().getName();</span>
+<span class="nc" id="L63">        } catch (IOException _) {</span>
+<span class="nc" id="L64">            return file.getAbsoluteFile().getName();</span>
+        }
+    }
+
+    public String getFileContent(String path) throws IOException {
+<span class="fc" id="L69">        return Files.readString(Path.of(path));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
