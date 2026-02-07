@@ -15,9 +15,9 @@ public class FileSystemController {
 
     private final FileSystemService fileSystemService;
 
-<span class="fc" id="L18">    public FileSystemController(FileSystemService fileSystemService) {</span>
-<span class="fc" id="L19">        this.fileSystemService = fileSystemService;</span>
-<span class="fc" id="L20">    }</span>
+<span class="nc" id="L18">    public FileSystemController(FileSystemService fileSystemService) {</span>
+<span class="nc" id="L19">        this.fileSystemService = fileSystemService;</span>
+<span class="nc" id="L20">    }</span>
 
     @GetMapping(&quot;/tree&quot;)
     public FileNode getTree(@RequestParam(defaultValue = &quot;.&quot;) String path) {
@@ -28,7 +28,7 @@ public class FileSystemController {
 
     @GetMapping(value = &quot;/content&quot;, produces = &quot;text/plain&quot;)
     public String getContent(@RequestParam String path) throws IOException {
-<span class="fc" id="L31">        return fileSystemService.getFileContent(path);</span>
+<span class="nc" id="L31">        return fileSystemService.getFileContent(path);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

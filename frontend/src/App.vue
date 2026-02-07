@@ -78,9 +78,10 @@ const hiddenLines = computed(() => {
   
   const lines = new Set();
   symbols.value.forEach(s => {
-    if (complexity.value === 'simplified' && s.category === 'BOILERPLATE') {
-      lines.add(s.line);
-    } else if (complexity.value === 'architectural' && s.category !== 'ARCHITECTURE' && (s.type === 'CLASS' || s.type === 'INTERFACE')) {
+    const isSimplifiedBoilerplate = complexity.value === 'simplified' && s.category === 'BOILERPLATE';
+    const isArchitecturalDetail = complexity.value === 'architectural' && s.category !== 'ARCHITECTURE' && (s.type === 'CLASS' || s.type === 'INTERFACE');
+    
+    if (isSimplifiedBoilerplate || isArchitecturalDetail) {
       lines.add(s.line);
     }
   });
@@ -97,7 +98,7 @@ const handleSymbolSelect = (symbol) => {
       lines[lineNum - 1].classList.add('highlight-line');
       setTimeout(() => {
         lines[lineNum - 1].classList.remove('highlight-line');
-      }, 2000);
+      }, 500);
     }
   }
 };
@@ -229,7 +230,7 @@ onMounted(() => {
   100% { background-color: transparent; }
 }
 .highlight-line {
-  animation: highlight 3s ease-out;
+  animation: highlight 0.5s ease-out;
   display: block;
   width: 100%;
   position: relative;

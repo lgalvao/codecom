@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.codecom.service.AnalysisServiceTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-02-07T21:47:05.200Z" hostname="Leonardos-Mac-mini.local" time="0.215">
+<testsuite name="com.codecom.service.AnalysisServiceTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-02-07T22:27:04.073Z" hostname="Leonardos-Mac-mini.local" time="0.307">
   <properties/>
-  <testcase name="getOutline_ShouldIdentifyBoilerplateAndArchitecture()" classname="com.codecom.service.AnalysisServiceTest" time="0.159"/>
-  <testcase name="getOutline_ShouldReturnEmpty_ForUnsupportedFiles()" classname="com.codecom.service.AnalysisServiceTest" time="0.003"/>
-  <testcase name="getOutline_ShouldDetectJavaClassesAndMethods()" classname="com.codecom.service.AnalysisServiceTest" time="0.003"/>
+  <testcase name="getOutline_ShouldIdentifyBoilerplateAndArchitecture()" classname="com.codecom.service.AnalysisServiceTest" time="0.238"/>
+  <testcase name="getOutline_ShouldReturnEmpty_ForUnsupportedFiles()" classname="com.codecom.service.AnalysisServiceTest" time="0.007"/>
+  <testcase name="getOutline_ShouldDetectJavaClassesAndMethods()" classname="com.codecom.service.AnalysisServiceTest" time="0.005"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.codecom.service.FileSystemServiceTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-02-07T21:47:05.415Z" hostname="Leonardos-Mac-mini.local" time="0.007">
-  <properties/>
-  <testcase name="getFileContent_ShouldReturnRawContent()" classname="com.codecom.service.FileSystemServiceTest" time="0.001"/>
-  <testcase name="getFileTree_ShouldThrowException_WhenPathDoesNotExist()" classname="com.codecom.service.FileSystemServiceTest" time="0.002"/>
-  <testcase name="getFileTree_ShouldBuildCorrectTree()" classname="com.codecom.service.FileSystemServiceTest" time="0.003"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
