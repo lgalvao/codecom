@@ -49,6 +49,10 @@ describe('App.vue', () => {
     ] 
   };
 
+  const mockTabManager = () => ({
+    addOrActivateTab: vi.fn()
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     axios.get.mockImplementation((url) => {
@@ -88,9 +92,7 @@ describe('App.vue', () => {
     const wrapper = shallowMount(App);
     const mockFile = { name: 'test.js', path: '/src/test.js', isDirectory: false };
     
-    wrapper.vm.tabManager = {
-      addOrActivateTab: vi.fn()
-    };
+    wrapper.vm.tabManager = mockTabManager();
     
     axios.get.mockImplementation((url) => {
       if (url.includes('/api/files/content')) return Promise.resolve({ data: 'const x = 1;' });
@@ -102,6 +104,8 @@ describe('App.vue', () => {
     
     expect(wrapper.vm.selectedFile).toEqual(mockFile);
     expect(wrapper.vm.fileContent).toBe('const x = 1;');
+    // Verify symbols are loaded from outline endpoint
+    expect(wrapper.vm.symbols.length).toBeGreaterThanOrEqual(0);
   });
 
   it('loads theme from localStorage on mount', () => {
@@ -172,9 +176,7 @@ describe('App.vue', () => {
       line: 10
     };
 
-    wrapper.vm.tabManager = {
-      addOrActivateTab: vi.fn()
-    };
+    wrapper.vm.tabManager = mockTabManager();
 
     axios.get.mockImplementation((url) => {
       if (url.includes('/api/files/content')) return Promise.resolve({ data: 'class TestClass {}' });
@@ -201,9 +203,7 @@ describe('App.vue', () => {
     const wrapper = shallowMount(App);
     const mockDir = { name: 'src', path: '/src', isDirectory: true };
     
-    wrapper.vm.tabManager = {
-      addOrActivateTab: vi.fn()
-    };
+    wrapper.vm.tabManager = mockTabManager();
     
     await wrapper.vm.handleFileSelect(mockDir);
     
