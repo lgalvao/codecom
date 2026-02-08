@@ -46,3 +46,8 @@ This document provides context and guidelines for AI agents working on the **Cod
 - Be proactive in verifying changes using the provided test suites.
 - Maintain the project's high aesthetic standards (Light/Dark mode support).
 - Follow the complexity-controlled view requirements mentioned in `SRS.md`.
+
+## 6. Project Documentation
+- **SRS.md**: Software Requirements Specification - Complete list of functional and non-functional requirements (FR.1-41, NFR.1-9)
+- **STATUS.md**: Current implementation status, test coverage, and development history
+- **AGENTS.md**: This file - Guidelines for AI agents working on CodeCom

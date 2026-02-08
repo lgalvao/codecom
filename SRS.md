@@ -1,5 +1,7 @@
 # Software Requirements Specification (SRS) - CodeCom
 
+**Related Documentation**: See `STATUS.md` for current implementation status and `AGENTS.md` for AI agent guidelines.
+
 ## 1. Introduction
 CodeCom is a high-performance, web-based code comprehension and visualization tool. It aims to reduce cognitive load for developers when exploring large, multi-language codebases by providing intelligent views and abstraction tools.
 
