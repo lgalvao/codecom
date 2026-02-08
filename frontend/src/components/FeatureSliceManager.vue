@@ -330,6 +330,9 @@ const activeSlice = computed(() => {
 });
 
 const sliceOptions = computed(() => {
+  if (!slices.value || !Array.isArray(slices.value)) {
+    return [];
+  }
   return slices.value.map(s => ({
     value: s.id,
     text: s.name
