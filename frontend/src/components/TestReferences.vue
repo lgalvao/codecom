@@ -66,6 +66,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { API_CONFIG, PATH_CONFIG } from '../config/api';
 
 const props = defineProps({
   rootPath: {
@@ -94,7 +95,7 @@ const loadTestReferences = async () => {
       className: props.className
     });
     
-    const response = await fetch(`http://localhost:8080/api/analysis/test-references?${params}`);
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/analysis/test-references?${params}`);
     
     if (!response.ok) {
       throw new Error(`Failed to load test references: ${response.statusText}`);
@@ -125,8 +126,8 @@ const getRelativePath = (fullPath) => {
   
   // Otherwise just show the last few parts
   const parts = fullPath.split(/[/\\]/);
-  return parts.length > 3 
-    ? '.../' + parts.slice(-3).join('/')
+  return parts.length > PATH_CONFIG.MAX_DEPTH_TO_SHOW 
+    ? '.../' + parts.slice(-PATH_CONFIG.MAX_DEPTH_TO_SHOW).join('/')
     : fullPath;
 };
 

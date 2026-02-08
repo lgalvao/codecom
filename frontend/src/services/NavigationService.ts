@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import { API_CONFIG } from '../config/api';
 
 export interface FileInfo {
   name: string;
@@ -49,7 +50,7 @@ export async function getPackageFiles(currentFilePath: string): Promise<FileInfo
  */
 export async function navigateToNextFile(currentFilePath: string): Promise<FileInfo | null> {
   try {
-    const response = await axios.get('http://localhost:8080/api/files/navigate/next', {
+    const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FILES.NAVIGATE_NEXT}`, {
       params: { path: currentFilePath }
     });
     
@@ -71,7 +72,7 @@ export async function navigateToNextFile(currentFilePath: string): Promise<FileI
  */
 export async function navigateToPreviousFile(currentFilePath: string): Promise<FileInfo | null> {
   try {
-    const response = await axios.get('http://localhost:8080/api/files/navigate/previous', {
+    const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FILES.NAVIGATE_PREVIOUS}`, {
       params: { path: currentFilePath }
     });
     
