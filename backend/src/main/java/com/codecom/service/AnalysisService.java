@@ -1,8 +1,11 @@
 package com.codecom.service;
 
+import com.codecom.dto.CallerInfo;
+import com.codecom.dto.CallerStatistics;
 import com.codecom.dto.SymbolDefinition;
 import com.codecom.dto.SymbolInfo;
 import com.codecom.dto.SymbolSearchResult;
+import com.codecom.dto.TestReference;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -12,6 +15,7 @@ import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.comments.JavadocComment;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
@@ -264,5 +266,171 @@ public class AnalysisService {
         }
 
         return null;
+    }
+
+    /**
+     * Find all callers of a specific method
+     * @param rootPath The root directory to search
+     * @param targetMethodName The name of the target method
+     * @param targetClassName Optional class name to narrow down the search
+     * @return Caller statistics including all callers and call sites
+     */
+    public CallerStatistics findCallers(String rootPath, String targetMethodName, String targetClassName) throws IOException {
+        List<CallerInfo> callers = new ArrayList<>();
+        Map<String, Integer> callerCounts = new HashMap<>();
+        
+        // Walk the file tree and search Java files
+        try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
+            paths
+                .filter(Files::isRegularFile)
+                .filter(p -> p.toString().endsWith(".java"))
+                .filter(p -> !p.toString().contains("node_modules"))
+                .filter(p -> !p.toString().contains("target"))
+                .filter(p -> !p.toString().contains(".git"))
+                .forEach(path -> {
+                    try {
+                        String content = Files.readString(path);
+                        ParseResult<CompilationUnit> result = javaParser.parse(content);
+                        
+                        if (result.isSuccessful() && result.getResult().isPresent()) {
+                            CompilationUnit cu = result.getResult().get();
+                            
+                            // Find method calls in this file
+                            cu.accept(new VoidVisitorAdapter<Void>() {
+                                private String currentClassName = "";
+                                private String currentMethodName = "";
+                                private int currentMethodLine = 0;
+                                
+                                @Override
+                                public void visit(ClassOrInterfaceDeclaration n, Void arg) {
+                                    currentClassName = n.getNameAsString();
+                                    super.visit(n, arg);
+                                }
+                                
+                                @Override
+                                public void visit(MethodDeclaration n, Void arg) {
+                                    currentMethodName = n.getNameAsString();
+                                    currentMethodLine = n.getRange().map(r -> r.begin.line).orElse(0);
+                                    super.visit(n, arg);
+                                }
+                                
+                                @Override
+                                public void visit(MethodCallExpr n, Void arg) {
+                                    String calledMethod = n.getNameAsString();
+                                    
+                                    // Check if this is the target method
+                                    if (calledMethod.equals(targetMethodName)) {
+                                        // If targetClassName is specified, we could do more sophisticated checking
+                                        // For now, we'll match by method name only
+                                        
+                                        String callerKey = path.toString() + ":" + currentClassName + "." + currentMethodName;
+                                        callerCounts.put(callerKey, callerCounts.getOrDefault(callerKey, 0) + 1);
+                                    }
+                                    
+                                    super.visit(n, arg);
+                                }
+                            }, null);
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
+                    }
+                });
+        }
+        
+        // Convert map to CallerInfo list
+        callerCounts.forEach((key, count) -> {
+            String[] parts = key.split(":");
+            String filePath = parts[0];
+            String[] methodParts = parts[1].split("\\.");
+            String className = methodParts.length > 1 ? methodParts[0] : "";
+            String methodName = methodParts.length > 1 ? methodParts[1] : methodParts[0];
+            
+            // Get line number by re-parsing the file (could be optimized)
+            try {
+                String content = Files.readString(Path.of(filePath));
+                ParseResult<CompilationUnit> result = javaParser.parse(content);
+                if (result.isSuccessful() && result.getResult().isPresent()) {
+                    CompilationUnit cu = result.getResult().get();
+                    Optional<MethodDeclaration> method = cu.findAll(MethodDeclaration.class).stream()
+                        .filter(m -> m.getNameAsString().equals(methodName))
+                        .findFirst();
+                    
+                    int line = method.map(m -> m.getRange().map(r -> r.begin.line).orElse(0)).orElse(0);
+                    callers.add(new CallerInfo(methodName, className, filePath, line, count));
+                }
+            } catch (IOException e) {
+                // Skip if we can't re-parse
+                callers.add(new CallerInfo(methodName, className, filePath, 0, count));
+            }
+        });
+        
+        int totalCallSites = callers.stream().mapToInt(CallerInfo::callCount).sum();
+        
+        return new CallerStatistics(
+            targetMethodName,
+            targetClassName != null ? targetClassName : "",
+            callers.size(),
+            totalCallSites,
+            callers
+        );
+    }
+
+    /**
+     * Find test files that reference a specific class
+     * @param rootPath The root directory to search
+     * @param targetClassName The name of the class to find references for
+     * @return List of test references
+     */
+    public List<TestReference> findTestReferences(String rootPath, String targetClassName) throws IOException {
+        List<TestReference> references = new ArrayList<>();
+        
+        // Walk the file tree and search test files
+        try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
+            paths
+                .filter(Files::isRegularFile)
+                .filter(p -> p.toString().endsWith(".java"))
+                .filter(p -> p.toString().contains("test") || p.toString().contains("Test"))
+                .filter(p -> !p.toString().contains("node_modules"))
+                .filter(p -> !p.toString().contains(".git"))
+                .forEach(path -> {
+                    try {
+                        String content = Files.readString(path);
+                        List<Integer> referenceLines = new ArrayList<>();
+                        
+                        // Simple text-based search for the class name
+                        String[] lines = content.split("\n");
+                        for (int i = 0; i < lines.length; i++) {
+                            if (lines[i].contains(targetClassName)) {
+                                referenceLines.add(i + 1); // 1-based line numbers
+                            }
+                        }
+                        
+                        if (!referenceLines.isEmpty()) {
+                            // Extract test class name from file
+                            ParseResult<CompilationUnit> result = javaParser.parse(content);
+                            String testClassName = path.getFileName().toString().replace(".java", "");
+                            
+                            if (result.isSuccessful() && result.getResult().isPresent()) {
+                                CompilationUnit cu = result.getResult().get();
+                                Optional<ClassOrInterfaceDeclaration> classDecl = cu.findFirst(ClassOrInterfaceDeclaration.class);
+                                if (classDecl.isPresent()) {
+                                    testClassName = classDecl.get().getNameAsString();
+                                }
+                            }
+                            
+                            references.add(new TestReference(
+                                testClassName,
+                                path.toString(),
+                                referenceLines.size(),
+                                referenceLines
+                            ));
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
+                    }
+                });
+        }
+        
+        return references;
     }
 }

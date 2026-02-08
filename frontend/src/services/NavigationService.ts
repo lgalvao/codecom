@@ -48,28 +48,44 @@ export async function getPackageFiles(currentFilePath: string): Promise<FileInfo
  * Navigate to next file in the same package
  */
 export async function navigateToNextFile(currentFilePath: string): Promise<FileInfo | null> {
-  const files = await getPackageFiles(currentFilePath);
-  const currentIndex = files.findIndex(f => f.path === currentFilePath);
-  
-  if (currentIndex === -1 || currentIndex === files.length - 1) {
-    return null; // No next file
+  try {
+    const response = await axios.get('http://localhost:8080/api/files/navigate/next', {
+      params: { path: currentFilePath }
+    });
+    
+    if (response.data) {
+      const path = response.data;
+      const name = path.substring(path.lastIndexOf('/') + 1);
+      return { name, path };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error navigating to next file:', error);
+    return null;
   }
-  
-  return files[currentIndex + 1];
 }
 
 /**
  * Navigate to previous file in the same package
  */
 export async function navigateToPreviousFile(currentFilePath: string): Promise<FileInfo | null> {
-  const files = await getPackageFiles(currentFilePath);
-  const currentIndex = files.findIndex(f => f.path === currentFilePath);
-  
-  if (currentIndex <= 0) {
-    return null; // No previous file
+  try {
+    const response = await axios.get('http://localhost:8080/api/files/navigate/previous', {
+      params: { path: currentFilePath }
+    });
+    
+    if (response.data) {
+      const path = response.data;
+      const name = path.substring(path.lastIndexOf('/') + 1);
+      return { name, path };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error navigating to previous file:', error);
+    return null;
   }
-  
-  return files[currentIndex - 1];
 }
 
 /**
