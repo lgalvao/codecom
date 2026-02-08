@@ -193,12 +193,12 @@ export function applyFilters(code: string, options: DetailControlOptions, langua
   const filteredLines = filterCode(processedCode, options, language);
   const hiddenLines = getHiddenLines(filteredLines);
   
-  // Generate filtered code (for display purposes)
+  // Generate filtered code with only visible lines
   const visibleLines = filteredLines.filter(l => l.isVisible);
   const filteredCode = visibleLines.map(l => l.content).join('\n');
   
   return {
-    filteredCode: processedCode, // Return full code with parameter filtering
+    filteredCode: filteredCode, // Return only visible lines
     hiddenLines,
     visibleLineCount: visibleLines.length,
   };

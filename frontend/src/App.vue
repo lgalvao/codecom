@@ -119,7 +119,6 @@ const handleTabClose = (tabId) => {
 
 const handleDetailChange = (options) => {
   detailOptions.value = options;
-  console.log('Detail options changed:', options);
 };
 
 const toggleStatsPanel = () => {
@@ -185,12 +184,10 @@ const handleSearchSelect = async (result) => {
 
 const handleHover = (element, position) => {
   // In future implementation, query backend for symbol information
-  console.log('Hover at:', position, 'Element:', element.textContent);
 };
 
 const handleScopeIsolate = (symbol) => {
   isolatedSymbol.value = symbol;
-  console.log('Isolating symbol:', symbol);
 };
 
 const handleScopeClear = () => {

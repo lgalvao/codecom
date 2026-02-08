@@ -81,7 +81,7 @@ export function exportToMarkdown(
   options: ExportOptions
 ): string {
   const detailOptions = getDetailOptionsForLevel(options.detailLevel);
-  const { filteredCode, hiddenLines } = applyFilters(code, detailOptions, language);
+  const { hiddenLines } = applyFilters(code, detailOptions, language);
   
   // Split code into lines
   const lines = code.split('\n');
@@ -131,7 +131,7 @@ export function exportToPDF(
   options: ExportOptions
 ): string {
   const detailOptions = getDetailOptionsForLevel(options.detailLevel);
-  const { filteredCode, hiddenLines } = applyFilters(code, detailOptions, language);
+  const { hiddenLines } = applyFilters(code, detailOptions, language);
   
   // Split code into lines
   const lines = code.split('\n');
