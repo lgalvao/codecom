@@ -326,6 +326,9 @@ const selectedSliceDetail = ref<FeatureSliceDetail | null>(null);
 
 // Computed
 const activeSlice = computed(() => {
+  if (!slices.value || !Array.isArray(slices.value)) {
+    return null;
+  }
   return slices.value.find(s => s.id === activeSliceId.value) || null;
 });
 
@@ -352,7 +355,8 @@ const depthOptions = [
 const loadSlices = async () => {
   loading.value = true;
   try {
-    slices.value = await featureSliceService.getAllSlices();
+    const result = await featureSliceService.getAllSlices();
+    slices.value = Array.isArray(result) ? result : [];
     
     // Restore active slice from localStorage
     const savedSliceId = localStorage.getItem('activeFeatureSlice');
@@ -365,6 +369,7 @@ const loadSlices = async () => {
     }
   } catch (error) {
     console.error('Failed to load slices:', error);
+    slices.value = []; // Ensure slices is always an array
   } finally {
     loading.value = false;
   }
