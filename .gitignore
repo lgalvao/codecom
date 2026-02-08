@@ -24,6 +24,8 @@ frontend/.npmrc
 backend/target/
 backend/data/
 backend/bin/
+backend/build/
+backend/.gradle/
 *.jar
 *.war
 *.ear
