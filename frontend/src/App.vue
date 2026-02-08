@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost, Layers } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost, Layers, Network } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import CodeMiniMap from './components/CodeMiniMap.vue';
@@ -17,6 +17,7 @@ import PackageNavigation from './components/PackageNavigation.vue';
 import ExportDialog from './components/ExportDialog.vue';
 import CallerList from './components/CallerList.vue';
 import FeatureSliceManager from './components/FeatureSliceManager.vue';
+import FlowGraphView from './components/FlowGraphView.vue';
 import { getOutline as getFrontendOutline, detectDeadCode } from './services/AnalysisService';
 import { applyFilters } from './services/CodeFilterService';
 
@@ -44,6 +45,7 @@ const selectedMethodForCallers = ref(null);
 const deadCodeInfo = ref([]);
 const showDeadCode = ref(false);
 const activeSliceFiles = ref([]);
+const showFlowGraph = ref(false);
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -423,6 +425,10 @@ const toggleClickNavigationMode = () => {
   localStorage.setItem('clickNavigationMode', clickNavigationMode.value.toString());
 };
 
+const toggleFlowGraph = () => {
+  showFlowGraph.value = !showFlowGraph.value;
+};
+
 // FR.37: Toggle dead code visualization
 const toggleDeadCodeVisualization = async () => {
   showDeadCode.value = !showDeadCode.value;
@@ -614,6 +620,15 @@ onMounted(() => {
           title="Dead Code Detection (FR.37) - Highlights methods with no internal callers"
         >
           <Ghost :size="20" />
+        </BButton>
+        
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-info': showFlowGraph }]" 
+          @click="toggleFlowGraph"
+          title="Architecture Flow Graph (FR.33) - Interactive visualization of request lifecycle"
+        >
+          <Network :size="20" />
         </BButton>
         
         <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
@@ -821,6 +836,12 @@ onMounted(() => {
       :enabled="hoverTooltipEnabled"
       :current-file="selectedFile"
       @hover="handleHover"
+    />
+
+    <!-- Flow Graph View -->
+    <FlowGraphView 
+      v-if="showFlowGraph"
+      @close="showFlowGraph = false"
     />
   </div>
 </template>
