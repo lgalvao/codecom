@@ -597,6 +597,7 @@ onMounted(() => {
     <!-- Hover Tooltip -->
     <HoverTooltip 
       :enabled="hoverTooltipEnabled"
+      :current-file="selectedFile"
       @hover="handleHover"
     />
   </div>

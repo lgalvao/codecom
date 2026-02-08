@@ -1,12 +1,15 @@
 package com.codecom.controller;
 
+import com.codecom.dto.SymbolDefinition;
 import com.codecom.dto.SymbolInfo;
 import com.codecom.dto.SymbolSearchResult;
 import com.codecom.service.AnalysisService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/analysis")
@@ -30,5 +33,16 @@ public class AnalysisController {
         @RequestParam String query
     ) throws IOException {
         return analysisService.searchSymbols(path, query);
+    }
+
+    @GetMapping("/definition")
+    public ResponseEntity<SymbolDefinition> getSymbolDefinition(
+        @RequestParam String path,
+        @RequestParam int line,
+        @RequestParam(required = false, defaultValue = "0") int column
+    ) throws IOException {
+        Optional<SymbolDefinition> definition = analysisService.getSymbolDefinition(path, line, column);
+        return definition.map(ResponseEntity::ok)
+                        .orElse(ResponseEntity.notFound().build());
     }
 }
