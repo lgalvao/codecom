@@ -116,3 +116,38 @@ export async function searchSymbols(rootPath: string, query: string): Promise<Sy
     return [];
   }
 }
+
+/**
+ * Information about potentially dead (unused) code
+ */
+export interface DeadCodeInfo {
+  name: string;
+  type: string;
+  className: string;
+  filePath: string;
+  line: number;
+  callerCount: number;
+  isPublic: boolean;
+  isTest: boolean;
+  reason: string;
+  isPotentiallyDead?: boolean;
+}
+
+/**
+ * Detect potentially dead code in the project
+ * FR.37: Dead Code Detection & Visualization
+ * 
+ * @param rootPath The root directory to analyze
+ * @returns List of potentially dead methods and classes
+ */
+export async function detectDeadCode(rootPath: string): Promise<DeadCodeInfo[]> {
+  try {
+    const response = await axios.get('http://localhost:8080/api/analysis/dead-code', {
+      params: { path: rootPath }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error detecting dead code:', error);
+    return [];
+  }
+}

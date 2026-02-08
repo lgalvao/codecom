@@ -1,6 +1,7 @@
 package com.codecom.controller;
 
 import com.codecom.dto.CallerStatistics;
+import com.codecom.dto.DeadCodeInfo;
 import com.codecom.dto.SymbolDefinition;
 import com.codecom.dto.SymbolInfo;
 import com.codecom.dto.SymbolSearchResult;
@@ -63,5 +64,12 @@ public class AnalysisController {
         @RequestParam String className
     ) throws IOException {
         return analysisService.findTestReferences(path, className);
+    }
+
+    @GetMapping("/dead-code")
+    public List<DeadCodeInfo> detectDeadCode(
+        @RequestParam String path
+    ) throws IOException {
+        return analysisService.detectDeadCode(path);
     }
 }

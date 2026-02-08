@@ -19,6 +19,10 @@ const props = defineProps({
     type: Set,
     default: () => new Set()
   },
+  deadCodeLines: {
+    type: Set,
+    default: () => new Set()
+  },
   clickNavigationMode: {
     type: Boolean,
     default: false
@@ -75,6 +79,9 @@ const updateHighlighting = async () => {
             if (props.hiddenLines.has(line)) {
               this.addClassToHast(node, 'line-faded');
             }
+            if (props.deadCodeLines.has(line)) {
+              this.addClassToHast(node, 'line-dead-code');
+            }
           }
         }
       ]
@@ -95,7 +102,7 @@ onMounted(async () => {
   updateHighlighting();
 });
 
-watch([() => props.code, () => props.filename, () => props.theme, () => props.hiddenLines], () => {
+watch([() => props.code, () => props.filename, () => props.theme, () => props.hiddenLines, () => props.deadCodeLines], () => {
   updateHighlighting();
 });
 
@@ -176,6 +183,16 @@ const handleCodeClick = (event) => {
   filter: blur(0.5px);
   pointer-events: none; /* Disable interaction with faded lines */
   user-select: none;    /* Prevent selection of faded lines */
+}
+
+/* FR.37: Dead code ghost mode styling (40% opacity) */
+.line-dead-code {
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.line-dead-code:hover {
+  opacity: 0.7; /* Slightly increase opacity on hover for readability */
 }
 
 /* Click navigation mode cursor */

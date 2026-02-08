@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2 } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import OutlineView from './components/OutlineView.vue';
@@ -15,7 +15,7 @@ import ScopeIsolation from './components/ScopeIsolation.vue';
 import PackageNavigation from './components/PackageNavigation.vue';
 import ExportDialog from './components/ExportDialog.vue';
 import CallerList from './components/CallerList.vue';
-import { getOutline as getFrontendOutline } from './services/AnalysisService';
+import { getOutline as getFrontendOutline, detectDeadCode } from './services/AnalysisService';
 import { applyFilters } from './services/CodeFilterService';
 
 const theme = ref('dark');
@@ -39,6 +39,8 @@ const hoverTooltipEnabled = ref(true);
 const isolatedSymbol = ref(null);
 const clickNavigationMode = ref(false);
 const selectedMethodForCallers = ref(null);
+const deadCodeInfo = ref([]);
+const showDeadCode = ref(false);
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -324,6 +326,41 @@ const hiddenLines = computed(() => {
   return complexityHiddenLines;
 });
 
+// FR.37: Dead code detection - compute which lines contain dead code
+const deadCodeLines = computed(() => {
+  const deadLines = new Set();
+  
+  if (!showDeadCode.value || !selectedFile.value) {
+    return deadLines;
+  }
+  
+  // Find dead code entries for the current file
+  const currentFileDeadCode = deadCodeInfo.value.filter(
+    dc => dc.filePath === selectedFile.value.path && dc.isPotentiallyDead
+  );
+  
+  // Add the line numbers for potentially dead methods
+  currentFileDeadCode.forEach(dc => {
+    deadLines.add(dc.line);
+  });
+  
+  return deadLines;
+});
+
+// Load dead code information for the project
+const loadDeadCodeInfo = async () => {
+  try {
+    const deadCodeData = await detectDeadCode(projectRootPath.value);
+    deadCodeInfo.value = deadCodeData.map(dc => ({
+      ...dc,
+      isPotentiallyDead: dc.callerCount === 0 && !dc.isPublic && !dc.isTest
+    }));
+  } catch (error) {
+    console.error('Error loading dead code information:', error);
+    deadCodeInfo.value = [];
+  }
+};
+
 const handleSymbolSelect = (symbol) => {
   const lineNum = symbol.line;
   const editor = document.querySelector('.shiki-container pre');
@@ -376,6 +413,18 @@ const toggleClickNavigationMode = () => {
   localStorage.setItem('clickNavigationMode', clickNavigationMode.value.toString());
 };
 
+// FR.37: Toggle dead code visualization
+const toggleDeadCodeVisualization = async () => {
+  showDeadCode.value = !showDeadCode.value;
+  
+  // Load dead code information if not already loaded and feature is being enabled
+  if (showDeadCode.value && deadCodeInfo.value.length === 0) {
+    await loadDeadCodeInfo();
+  }
+  
+  localStorage.setItem('showDeadCode', showDeadCode.value.toString());
+};
+
 /**
  * Handle symbol navigation from CodeHighlighter
  * Implements FR.24 (Control-Click) and FR.25 (Click Navigation Mode)
@@ -425,6 +474,13 @@ onMounted(() => {
   const savedClickNav = localStorage.getItem('clickNavigationMode');
   if (savedClickNav !== null) {
     clickNavigationMode.value = savedClickNav === 'true';
+  }
+  
+  // Load dead code visualization preference
+  const savedShowDeadCode = localStorage.getItem('showDeadCode');
+  if (savedShowDeadCode === 'true') {
+    showDeadCode.value = true;
+    loadDeadCodeInfo();
   }
   
   fetchTree();
@@ -532,6 +588,15 @@ onMounted(() => {
           <MousePointer2 :size="20" />
         </BButton>
         
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-warning': showDeadCode }]" 
+          @click="toggleDeadCodeVisualization"
+          title="Dead Code Detection (FR.37) - Highlights methods with no internal callers"
+        >
+          <Ghost :size="20" />
+        </BButton>
+        
         <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
           <Sun v-if="theme === 'dark'" :size="20" />
           <Moon v-else :size="20" />
@@ -598,6 +663,7 @@ onMounted(() => {
                  :filename="selectedFile.name" 
                  :theme="theme" 
                  :hidden-lines="hiddenLines"
+                 :dead-code-lines="deadCodeLines"
                  :click-navigation-mode="clickNavigationMode"
                  @navigate-to-symbol="handleNavigateToSymbol"
                />

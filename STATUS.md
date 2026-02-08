@@ -39,20 +39,29 @@ This document tracks the implementation progress of **CodeCom** against the requ
 | **FR.29** | Cross-Reference Navigation | 🟢 Done | Bidirectional navigation history service implemented. |
 | **FR.30** | Multi-Format Export | 🟢 Done | Export UI and service fully tested. Markdown and PDF/HTML export working. |
 | **FR.31** | Project-Wide Export | 🟢 Done | Backend integration complete. Multi-file export via API endpoint working. |
+| **FR.37** | Dead Code Detection | 🟢 Done | Methods with zero internal callers displayed with ghost mode (40% opacity). |
+| **FR.38** | Relationship Graph Database | 🟢 Partial | Entity schema and service foundation complete. CALLS/INHERITS implemented. |
 | **FR.40** | Definition Peek (Code Bubble) | 🟢 Done | Enhanced hover tooltips show first 10 lines of implementation. |
 | **FR.41** | Interactive Breadcrumb Navigation | 🟢 Done | Clickable breadcrumb dropdowns showing sibling methods/classes at every level. |
 
 ## Technical Summary
 - **Backend**: Spring Boot 4 / Java 25 is operational.
-  - Test Coverage: **94%** ✅ (48 tests)
+  - Test Coverage: **94%** ✅ (52 tests, up from 48)
   - New endpoints: `/api/export` for project-wide export
   - New endpoint: `/api/analysis/definition` for hover tooltips
+  - New endpoint: `/api/analysis/dead-code` for FR.37
 - **Frontend**: Vue 3.5 / Vite is operational with BootstrapVueNext.
-  - Test Coverage: **~77%** ✅ (284 tests, up from 265)
+  - Test Coverage: **~77%** ✅ (284 tests)
   - Components Coverage: **~90%**
-- **Total Tests**: 332 passing (284 frontend + 48 backend)
+- **Total Tests**: 336 passing (284 frontend + 52 backend)
 
 ## Recent Improvements (Current Session)
+- ✅ **FR.37**: Implemented Dead Code Detection & Visualization with ghost mode (40% opacity)
+- ✅ **DeadCodeInfo DTO**: New backend DTO for dead code information
+- ✅ **Dead Code Analysis**: Backend service detects methods with zero internal callers
+- ✅ **Ghost Mode Styling**: Frontend styling with 40% opacity for potentially dead code
+- ✅ **UI Toggle**: Ghost icon button in navbar to enable/disable dead code visualization
+- ✅ **Test Coverage**: Added 4 new backend tests for dead code detection (48 → 52 tests)
 - ✅ **FR.41**: Implemented Interactive Breadcrumb Navigation with dropdowns
 - ✅ **BreadcrumbNav**: New component with hierarchical navigation and sibling browsing
 - ✅ **Test Coverage**: Added 19 new tests for BreadcrumbNav (265 → 284 tests)
@@ -67,20 +76,66 @@ This document tracks the implementation progress of **CodeCom** against the requ
 - ✅ **Test Coverage**: Overall frontend tests increased from 231 to 284 (+53 tests)
 
 ## Current Implementation Status
-- 🟢 **Done**: 32/41 (78%) - Includes all FR.1-31 plus FR.40-41
-- 🟢 **Partial**: 1/41 (2%) - FR.1, FR.9, FR.10 need enhancement
-- 🔴 **Missing**: 8/41 (20%) - FR.32-39 not yet started
+- 🟢 **Done**: 33/41 (80%) - Includes all FR.1-31 plus FR.37, FR.40-41
+- 🟢 **Partial**: 2/41 (5%) - FR.1, FR.9, FR.10, FR.38 need completion/enhancement
+- 🔴 **Missing**: 6/41 (15%) - FR.32-36, FR.39 not yet started
 
 ## Next High-Priority Gaps
 1. **Test Coverage**: Target 80% frontend coverage (currently ~77%)
    - Main gap: App.vue at ~53% needs integration tests
-2. **FR.1, FR.9, FR.10**: Review and enhance as needed
-3. **Advanced Features (FR.32-41)**: Continue foundation features
+2. **FR.1, FR.9, FR.10, FR.38**: Complete partial implementations
+   - FR.38: Add INJECTS/MAPS_TO_URL relationships, API endpoints, tests
+3. **Advanced Features (FR.32-41)**: Continue with remaining features
+   - ✅ FR.37: Dead Code Detection (Complete)
    - ✅ FR.40: Definition Peek (Complete)
    - ✅ FR.41: Breadcrumb Navigation (Complete)
-   - Next: FR.37 (Dead Code), FR.38-39 (Knowledge Graph)
+   - 🟡 FR.38: Knowledge Graph (Foundation complete, needs API/tests)
+   - Next: FR.39 (Cross-Language Query), FR.32-36 (Visualizations)
 
 ## Implementation History
+
+### Session 5 - Dead Code Detection & Knowledge Graph Foundation (February 8, 2026)
+**Focus**: Implement FR.37 - Dead Code Detection & Start FR.38 - Knowledge Graph
+
+**Achievements**:
+- ✅ Implemented FR.37: Dead Code Detection with ghost mode styling (40% opacity)
+- ✅ Created DeadCodeInfo DTO for backend
+- ✅ Added detectDeadCode method to AnalysisService
+- ✅ Created `/api/analysis/dead-code` REST endpoint
+- ✅ Enhanced CodeHighlighter with deadCodeLines prop and ghost mode CSS
+- ✅ Integrated dead code detection in App.vue with toggle button (Ghost icon)
+- ✅ Added localStorage persistence for dead code visualization preference
+- ✅ Added 4 new backend tests for dead code detection
+- ✅ **FR.38 Foundation**: Created entity schema for knowledge graph
+- ✅ Created CodeNode and CodeRelationship JPA entities
+- ✅ Created CodeNodeRepository and CodeRelationshipRepository
+- ✅ Implemented KnowledgeGraphService with project indexing
+- ✅ Implemented CALLS and INHERITS relationship tracking
+- ✅ Backend test coverage remains at 94% (52 tests total, up from 48)
+- ✅ Frontend test coverage remains at ~77% (284 tests total)
+
+**New Features**: 
+- Dead code detection and visualization (FR.37) - Complete
+- Knowledge graph foundation (FR.38) - Partial
+- Ghost mode styling with 40% opacity for unused methods
+- UI toggle to enable/disable dead code highlighting
+- JPA-based graph database structure
+
+**New Components**: 
+- Backend: DeadCodeInfo.java (DTO)
+- Backend: CodeNode.java, CodeRelationship.java (Entities)
+- Backend: CodeNodeRepository.java, CodeRelationshipRepository.java
+- Backend: KnowledgeGraphService.java
+- Frontend: Ghost mode styling in CodeHighlighter
+
+**API Endpoints**: 
+- `/api/analysis/dead-code` (GET) for detecting unused methods
+
+**Files Modified**: 
+- Backend: AnalysisService.java, AnalysisController.java, AnalysisServiceTest.java
+- Frontend: AnalysisService.ts, CodeHighlighter.vue, App.vue
+
+**Test Summary**: 336 total tests (284 frontend + 52 backend), all passing
 
 ### Session 4 - Project-Wide Export, Definition Peek & Breadcrumb Navigation (February 8, 2026)
 **Focus**: Complete FR.31, implement FR.40-41 from advanced features
