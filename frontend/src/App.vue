@@ -2,14 +2,20 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import OutlineView from './components/OutlineView.vue';
 import CodeStatistics from './components/CodeStatistics.vue';
 import DetailControlPanel from './components/DetailControlPanel.vue';
 import SymbolSearch from './components/SymbolSearch.vue';
+import TabManager from './components/TabManager.vue';
+import HoverTooltip from './components/HoverTooltip.vue';
+import ScopeIsolation from './components/ScopeIsolation.vue';
+import PackageNavigation from './components/PackageNavigation.vue';
+import ExportDialog from './components/ExportDialog.vue';
 import { getOutline as getFrontendOutline } from './services/AnalysisService';
+import { applyFilters } from './services/CodeFilterService';
 
 const theme = ref('dark');
 const fileTree = ref(null);
@@ -21,8 +27,14 @@ const complexity = ref('standard');
 const showStatsPanel = ref(false);
 const showDetailPanel = ref(false);
 const showSearchPanel = ref(false);
+const showScopePanel = ref(false);
+const showExportPanel = ref(false);
 const statsComponent = ref(null);
 const projectRootPath = ref('..');
+const tabManager = ref(null);
+const openTabs = ref([]);
+const hoverTooltipEnabled = ref(true);
+const isolatedSymbol = ref(null);
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -55,8 +67,7 @@ const fetchTree = async () => {
   }
 };
 
-const handleFileSelect = async (node) => {
-  selectedFile.value = node;
+const loadFileContent = async (node) => {
   isLoading.value = true;
   symbols.value = [];
   try {
@@ -82,10 +93,32 @@ const handleFileSelect = async (node) => {
   }
 };
 
+const handleFileSelect = async (node) => {
+  selectedFile.value = node;
+  // Add to tab manager
+  if (tabManager.value) {
+    tabManager.value.addOrActivateTab(node);
+  }
+  await loadFileContent(node);
+};
+
+const handleTabSelect = async (tab) => {
+  // Switch to selected tab
+  selectedFile.value = { name: tab.name, path: tab.path };
+  await loadFileContent(selectedFile.value);
+};
+
+const handleTabClose = (tabId) => {
+  // If all tabs are closed, clear the selected file
+  if (tabManager.value?.tabs.length === 0) {
+    selectedFile.value = null;
+    fileContent.value = '';
+    symbols.value = [];
+  }
+};
+
 const handleDetailChange = (options) => {
   detailOptions.value = options;
-  // In a future implementation, this would filter the code display
-  console.log('Detail options changed:', options);
 };
 
 const toggleStatsPanel = () => {
@@ -98,12 +131,30 @@ const toggleDetailPanel = () => {
   showDetailPanel.value = !showDetailPanel.value;
   if (showStatsPanel.value) showStatsPanel.value = false;
   if (showSearchPanel.value) showSearchPanel.value = false;
+  if (showScopePanel.value) showScopePanel.value = false;
 };
 
 const toggleSearchPanel = () => {
   showSearchPanel.value = !showSearchPanel.value;
   if (showStatsPanel.value) showStatsPanel.value = false;
   if (showDetailPanel.value) showDetailPanel.value = false;
+  if (showScopePanel.value) showScopePanel.value = false;
+};
+
+const toggleScopePanel = () => {
+  showScopePanel.value = !showScopePanel.value;
+  if (showStatsPanel.value) showStatsPanel.value = false;
+  if (showDetailPanel.value) showDetailPanel.value = false;
+  if (showSearchPanel.value) showSearchPanel.value = false;
+  if (showExportPanel.value) showExportPanel.value = false;
+};
+
+const toggleExportPanel = () => {
+  showExportPanel.value = !showExportPanel.value;
+  if (showStatsPanel.value) showStatsPanel.value = false;
+  if (showDetailPanel.value) showDetailPanel.value = false;
+  if (showSearchPanel.value) showSearchPanel.value = false;
+  if (showScopePanel.value) showScopePanel.value = false;
 };
 
 const handleSearchSelect = async (result) => {
@@ -131,6 +182,39 @@ const handleSearchSelect = async (result) => {
   }, 500);
 };
 
+const handleHover = (element, position) => {
+  // In future implementation, query backend for symbol information
+};
+
+const handleScopeIsolate = (symbol) => {
+  isolatedSymbol.value = symbol;
+};
+
+const handleScopeClear = () => {
+  isolatedSymbol.value = null;
+};
+
+const handlePackageNavigate = async (file) => {
+  await handleFileSelect(file);
+};
+
+const getLanguageFromFilename = (filename) => {
+  const ext = filename.split('.').pop().toLowerCase();
+  const map = {
+    'java': 'java',
+    'js': 'javascript',
+    'ts': 'typescript',
+    'tsx': 'typescript',
+    'html': 'html',
+    'css': 'css',
+    'xml': 'xml',
+    'yaml': 'yaml',
+    'yml': 'yaml',
+    'sql': 'sql',
+  };
+  return map[ext] || 'text';
+};
+
 const filteredSymbols = computed(() => {
   if (complexity.value === 'standard') return symbols.value;
   
@@ -146,18 +230,48 @@ const filteredSymbols = computed(() => {
 });
 
 const hiddenLines = computed(() => {
-  if (complexity.value === 'standard') return new Set();
+  // First, apply complexity-based hiding
+  const complexityHiddenLines = new Set();
+  if (complexity.value !== 'standard') {
+    symbols.value.forEach(s => {
+      const isSimplifiedBoilerplate = complexity.value === 'simplified' && s.category === 'BOILERPLATE';
+      const isArchitecturalDetail = complexity.value === 'architectural' && s.category !== 'ARCHITECTURE' && (s.type === 'CLASS' || s.type === 'INTERFACE');
+      
+      if (isSimplifiedBoilerplate || isArchitecturalDetail) {
+        complexityHiddenLines.add(s.line);
+      }
+    });
+  }
   
-  const lines = new Set();
-  symbols.value.forEach(s => {
-    const isSimplifiedBoilerplate = complexity.value === 'simplified' && s.category === 'BOILERPLATE';
-    const isArchitecturalDetail = complexity.value === 'architectural' && s.category !== 'ARCHITECTURE' && (s.type === 'CLASS' || s.type === 'INTERFACE');
+  // Apply scope isolation dimming
+  if (isolatedSymbol.value) {
+    const startLine = isolatedSymbol.value.line;
+    const endLine = isolatedSymbol.value.endLine || startLine + 20; // Estimate end if not provided
     
-    if (isSimplifiedBoilerplate || isArchitecturalDetail) {
-      lines.add(s.line);
+    // Dim all lines except the isolated range
+    for (let i = 1; i <= fileContent.value.split('\n').length; i++) {
+      if (i < startLine || i > endLine) {
+        complexityHiddenLines.add(i);
+      }
     }
-  });
-  return lines;
+  }
+  
+  // Then, apply detail control filtering
+  if (selectedFile.value && fileContent.value) {
+    const extension = selectedFile.value.name.split('.').pop().toLowerCase();
+    const language = extension === 'js' ? 'javascript' : 
+                      extension === 'ts' || extension === 'tsx' ? 'typescript' : 
+                      'java';
+    
+    const filterResult = applyFilters(fileContent.value, detailOptions.value, language);
+    
+    // Combine both sets of hidden lines (but don't hide if in isolated range)
+    if (!isolatedSymbol.value) {
+      filterResult.hiddenLines.forEach(line => complexityHiddenLines.add(line));
+    }
+  }
+  
+  return complexityHiddenLines;
 });
 
 const handleSymbolSelect = (symbol) => {
@@ -237,6 +351,25 @@ onMounted(() => {
           <Sliders :size="20" />
         </BButton>
         
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showScopePanel }]" 
+          @click="toggleScopePanel"
+          title="Scope Isolation"
+        >
+          <Focus :size="20" />
+        </BButton>
+        
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showExportPanel }]" 
+          @click="toggleExportPanel"
+          title="Export Code"
+          :disabled="!selectedFile"
+        >
+          <Download :size="20" />
+        </BButton>
+        
         <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
           <Sun v-if="theme === 'dark'" :size="20" />
           <Moon v-else :size="20" />
@@ -269,10 +402,20 @@ onMounted(() => {
 
       <!-- Main Content -->
       <div class="flex-grow-1 d-flex flex-column overflow-hidden">
-        <div class="tabs-area border-bottom px-2 py-1 bg-light d-flex align-items-center" style="height: 35px; background-color: var(--sidebar-bg) !important;">
-           <span v-if="selectedFile" class="badge bg-secondary rounded-pill me-2 px-3 py-1 small fw-normal">
-             {{ selectedFile.name }}
-           </span>
+        <div class="d-flex align-items-center border-bottom" style="height: 35px; background-color: var(--sidebar-bg);">
+          <TabManager 
+            ref="tabManager"
+            :current-file="selectedFile"
+            @select="handleTabSelect"
+            @close="handleTabClose"
+            style="flex: 1;"
+          />
+          <div v-if="selectedFile" class="px-2 border-start">
+            <PackageNavigation 
+              :current-file="selectedFile"
+              @navigate="handlePackageNavigate"
+            />
+          </div>
         </div>
         <div class="flex-grow-1 p-0 overflow-hidden editor-bg position-relative d-flex">
           <div v-if="!selectedFile" class="welcome-screen d-flex flex-column align-items-center justify-content-center w-100 p-5">
@@ -353,6 +496,44 @@ onMounted(() => {
         @close="showSearchPanel = false"
       />
     </BOffcanvas>
+
+    <!-- Scope Isolation Panel -->
+    <BOffcanvas 
+      v-model="showScopePanel" 
+      placement="end"
+      title="Scope Isolation"
+    >
+      <ScopeIsolation 
+        :symbols="symbols"
+        :current-file="selectedFile?.name"
+        @isolate="handleScopeIsolate"
+        @clear="handleScopeClear"
+      />
+    </BOffcanvas>
+
+    <!-- Export Panel -->
+    <BOffcanvas 
+      v-model="showExportPanel" 
+      placement="end"
+      title="Export Code"
+    >
+      <ExportDialog 
+        v-if="selectedFile && fileContent"
+        :code="fileContent"
+        :filename="selectedFile.name"
+        :language="getLanguageFromFilename(selectedFile.name)"
+        @close="showExportPanel = false"
+      />
+      <div v-else class="text-muted text-center p-3">
+        Select a file to export
+      </div>
+    </BOffcanvas>
+
+    <!-- Hover Tooltip -->
+    <HoverTooltip 
+      :enabled="hoverTooltipEnabled"
+      @hover="handleHover"
+    />
   </div>
 </template>
 
