@@ -30,4 +30,14 @@ public class FileSystemController {
     public String getContent(@RequestParam String path) throws IOException {
         return fileSystemService.getFileContent(path);
     }
+
+    @GetMapping("/navigate/next")
+    public String getNextFile(@RequestParam String path) {
+        return fileSystemService.getNextFileInPackage(path);
+    }
+
+    @GetMapping("/navigate/previous")
+    public String getPreviousFile(@RequestParam String path) {
+        return fileSystemService.getPreviousFileInPackage(path);
+    }
 }

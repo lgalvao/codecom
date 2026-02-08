@@ -14,6 +14,7 @@ import HoverTooltip from './components/HoverTooltip.vue';
 import ScopeIsolation from './components/ScopeIsolation.vue';
 import PackageNavigation from './components/PackageNavigation.vue';
 import ExportDialog from './components/ExportDialog.vue';
+import CallerList from './components/CallerList.vue';
 import { getOutline as getFrontendOutline } from './services/AnalysisService';
 import { applyFilters } from './services/CodeFilterService';
 
@@ -29,12 +30,15 @@ const showDetailPanel = ref(false);
 const showSearchPanel = ref(false);
 const showScopePanel = ref(false);
 const showExportPanel = ref(false);
+const showCallerPanel = ref(false);
 const statsComponent = ref(null);
 const projectRootPath = ref('..');
 const tabManager = ref(null);
 const openTabs = ref([]);
 const hoverTooltipEnabled = ref(true);
 const isolatedSymbol = ref(null);
+const clickNavigationMode = ref(false);
+const selectedMethodForCallers = ref(null);
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -335,6 +339,43 @@ const handleSymbolSelect = (symbol) => {
   }
 };
 
+const showCallersForSymbol = (symbol) => {
+  if (symbol.type === 'METHOD') {
+    selectedMethodForCallers.value = {
+      methodName: symbol.name,
+      className: '', // Could be extracted from the file context
+      rootPath: projectRootPath.value
+    };
+    showCallerPanel.value = true;
+  }
+};
+
+const handleCallerNavigate = async (location) => {
+  // Navigate to the caller location
+  const node = { name: location.filePath.split('/').pop(), path: location.filePath };
+  await handleFileSelect(node);
+  
+  // Scroll to the line
+  setTimeout(() => {
+    const editor = document.querySelector('.shiki-container pre');
+    if (editor) {
+      const lines = editor.querySelectorAll('.line');
+      if (lines[location.line - 1]) {
+        lines[location.line - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        lines[location.line - 1].classList.add('highlight-line');
+        setTimeout(() => {
+          lines[location.line - 1].classList.remove('highlight-line');
+        }, 500);
+      }
+    }
+  }, 300);
+};
+
+const toggleClickNavigationMode = () => {
+  clickNavigationMode.value = !clickNavigationMode.value;
+  localStorage.setItem('clickNavigationMode', clickNavigationMode.value.toString());
+};
+
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme') || 'dark';
   theme.value = savedTheme;
@@ -513,7 +554,11 @@ onMounted(() => {
                 <span class="badge bg-dark text-muted p-1 xx-small">{{ filteredSymbols.length }} symbols</span>
               </div>
               <div class="flex-grow-1 overflow-auto">
-                <OutlineView :symbols="filteredSymbols" @select="handleSymbolSelect" />
+                <OutlineView 
+                  :symbols="filteredSymbols" 
+                  @select="handleSymbolSelect"
+                  @show-callers="showCallersForSymbol"
+                />
               </div>
             </div>
           </template>
@@ -592,6 +637,22 @@ onMounted(() => {
       <div v-else class="text-muted text-center p-3">
         Select a file to export
       </div>
+    </BOffcanvas>
+
+    <!-- Caller List Panel -->
+    <BOffcanvas 
+      v-model="showCallerPanel" 
+      placement="end"
+      title="Call Graph Analysis"
+    >
+      <CallerList
+        v-if="selectedMethodForCallers"
+        :root-path="selectedMethodForCallers.rootPath"
+        :method-name="selectedMethodForCallers.methodName"
+        :class-name="selectedMethodForCallers.className"
+        @close="showCallerPanel = false"
+        @navigate="handleCallerNavigate"
+      />
     </BOffcanvas>
 
     <!-- Hover Tooltip -->
