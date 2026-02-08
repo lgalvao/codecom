@@ -12,6 +12,7 @@ import SymbolSearch from './components/SymbolSearch.vue';
 import TabManager from './components/TabManager.vue';
 import HoverTooltip from './components/HoverTooltip.vue';
 import ScopeIsolation from './components/ScopeIsolation.vue';
+import PackageNavigation from './components/PackageNavigation.vue';
 import { getOutline as getFrontendOutline } from './services/AnalysisService';
 import { applyFilters } from './services/CodeFilterService';
 
@@ -183,6 +184,10 @@ const handleScopeIsolate = (symbol) => {
 
 const handleScopeClear = () => {
   isolatedSymbol.value = null;
+};
+
+const handlePackageNavigate = async (file) => {
+  await handleFileSelect(file);
 };
 
 const filteredSymbols = computed(() => {
@@ -362,12 +367,21 @@ onMounted(() => {
 
       <!-- Main Content -->
       <div class="flex-grow-1 d-flex flex-column overflow-hidden">
-        <TabManager 
-          ref="tabManager"
-          :current-file="selectedFile"
-          @select="handleTabSelect"
-          @close="handleTabClose"
-        />
+        <div class="d-flex align-items-center border-bottom" style="height: 35px; background-color: var(--sidebar-bg);">
+          <TabManager 
+            ref="tabManager"
+            :current-file="selectedFile"
+            @select="handleTabSelect"
+            @close="handleTabClose"
+            style="flex: 1;"
+          />
+          <div v-if="selectedFile" class="px-2 border-start">
+            <PackageNavigation 
+              :current-file="selectedFile"
+              @navigate="handlePackageNavigate"
+            />
+          </div>
+        </div>
         <div class="flex-grow-1 p-0 overflow-hidden editor-bg position-relative d-flex">
           <div v-if="!selectedFile" class="welcome-screen d-flex flex-column align-items-center justify-content-center w-100 p-5">
             <Code :size="64" class="text-muted mb-4 opacity-25" />
