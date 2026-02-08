@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost, Layers } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import CodeMiniMap from './components/CodeMiniMap.vue';
@@ -16,6 +16,7 @@ import ScopeIsolation from './components/ScopeIsolation.vue';
 import PackageNavigation from './components/PackageNavigation.vue';
 import ExportDialog from './components/ExportDialog.vue';
 import CallerList from './components/CallerList.vue';
+import FeatureSliceManager from './components/FeatureSliceManager.vue';
 import { getOutline as getFrontendOutline, detectDeadCode } from './services/AnalysisService';
 import { applyFilters } from './services/CodeFilterService';
 
@@ -42,6 +43,7 @@ const clickNavigationMode = ref(false);
 const selectedMethodForCallers = ref(null);
 const deadCodeInfo = ref([]);
 const showDeadCode = ref(false);
+const activeSliceFiles = ref([]);
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -433,6 +435,15 @@ const toggleDeadCodeVisualization = async () => {
   localStorage.setItem('showDeadCode', showDeadCode.value.toString());
 };
 
+// FR.35: Handle feature slice changes
+const handleSliceChange = (sliceId) => {
+  // This is handled by the FeatureSliceManager component
+};
+
+const handleSliceFilesChange = (files) => {
+  activeSliceFiles.value = files;
+};
+
 /**
  * Handle symbol navigation from CodeHighlighter
  * Implements FR.24 (Control-Click) and FR.25 (Click Navigation Mode)
@@ -631,7 +642,20 @@ onMounted(() => {
               <span>Connecting to backend...</span>
             </div>
           </template>
-          <FileTreeNode v-else :node="fileTree" @select="handleFileSelect" />
+          <FileTreeNode 
+            v-else 
+            :node="fileTree" 
+            :slice-files="activeSliceFiles"
+            @select="handleFileSelect" 
+          />
+        </div>
+        
+        <!-- Feature Slice Manager Section -->
+        <div class="p-3 border-top">
+          <FeatureSliceManager 
+            @slice-change="handleSliceChange"
+            @files-change="handleSliceFilesChange"
+          />
         </div>
       </div>
 
