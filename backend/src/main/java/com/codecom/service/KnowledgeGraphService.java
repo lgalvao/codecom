@@ -302,4 +302,157 @@ public class KnowledgeGraphService {
             .map(Optional::get)
             .toList();
     }
+    
+    /**
+     * Get a node by ID
+     * FR.38: Relationship Graph Database
+     */
+    public Optional<CodeNode> getNodeById(Long nodeId) {
+        return nodeRepository.findById(nodeId);
+    }
+    
+    /**
+     * Get all relationships for a specific node (both incoming and outgoing)
+     * FR.38: Relationship Graph Database
+     */
+    public Map<String, List<CodeRelationship>> getNodeRelationships(Long nodeId) {
+        Map<String, List<CodeRelationship>> relationships = new HashMap<>();
+        relationships.put("outgoing", relationshipRepository.findBySourceId(nodeId));
+        relationships.put("incoming", relationshipRepository.findByTargetId(nodeId));
+        return relationships;
+    }
+    
+    /**
+     * Find inheritance hierarchy for a class
+     * FR.38: Relationship Graph Database
+     */
+    public List<CodeNode> findInheritanceHierarchy(Long nodeId) {
+        List<CodeRelationship> relationships = relationshipRepository
+            .findBySourceIdAndRelationshipType(nodeId, "INHERITS");
+        
+        return relationships.stream()
+            .map(r -> nodeRepository.findById(r.getTargetId()))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .toList();
+    }
+    
+    /**
+     * Find all classes that inherit from a given class
+     * FR.38: Relationship Graph Database
+     */
+    public List<CodeNode> findSubclasses(Long nodeId) {
+        List<CodeRelationship> relationships = relationshipRepository
+            .findByTargetIdAndRelationshipType(nodeId, "INHERITS");
+        
+        return relationships.stream()
+            .map(r -> nodeRepository.findById(r.getSourceId()))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .toList();
+    }
+    
+    /**
+     * Find call chain between two nodes (breadth-first search)
+     * FR.39: Cross-Language Query Support
+     */
+    public List<List<Long>> findCallChain(Long sourceId, Long targetId, int maxDepth) {
+        List<List<Long>> chains = new ArrayList<>();
+        Queue<List<Long>> queue = new LinkedList<>();
+        Set<Long> visited = new HashSet<>();
+        
+        queue.add(List.of(sourceId));
+        
+        while (!queue.isEmpty() && chains.size() < 10) { // Limit to 10 chains
+            List<Long> currentPath = queue.poll();
+            Long currentNode = currentPath.get(currentPath.size() - 1);
+            
+            if (currentPath.size() > maxDepth) {
+                continue;
+            }
+            
+            if (currentNode.equals(targetId)) {
+                chains.add(new ArrayList<>(currentPath));
+                continue;
+            }
+            
+            if (visited.contains(currentNode)) {
+                continue;
+            }
+            visited.add(currentNode);
+            
+            // Find all nodes this node calls
+            List<CodeRelationship> callRels = relationshipRepository
+                .findBySourceIdAndRelationshipType(currentNode, "CALLS");
+            
+            for (CodeRelationship rel : callRels) {
+                if (!currentPath.contains(rel.getTargetId())) {
+                    List<Long> newPath = new ArrayList<>(currentPath);
+                    newPath.add(rel.getTargetId());
+                    queue.add(newPath);
+                }
+            }
+        }
+        
+        return chains;
+    }
+    
+    /**
+     * Execute a cross-language query
+     * FR.39: Cross-Language Query Support
+     * 
+     * Example queries:
+     * - "calls:MethodName" - Find all nodes that call MethodName
+     * - "inherits:ClassName" - Find all classes that inherit from ClassName
+     * - "type:CLASS public:true" - Find all public classes
+     */
+    public List<CodeNode> executeQuery(String query) {
+        List<CodeNode> results = new ArrayList<>();
+        
+        // Parse simple query format: "key:value key:value"
+        String[] parts = query.split(" ");
+        Map<String, String> queryParams = new HashMap<>();
+        
+        for (String part : parts) {
+            String[] kv = part.split(":", 2);
+            if (kv.length == 2) {
+                queryParams.put(kv[0].toLowerCase(), kv[1]);
+            }
+        }
+        
+        // Handle different query types
+        if (queryParams.containsKey("calls")) {
+            String methodName = queryParams.get("calls");
+            List<CodeNode> methods = nodeRepository.searchByName(methodName);
+            for (CodeNode method : methods) {
+                results.addAll(findCallers(method.getId()));
+            }
+        } else if (queryParams.containsKey("inherits")) {
+            String className = queryParams.get("inherits");
+            List<CodeNode> classes = nodeRepository.searchByName(className);
+            for (CodeNode clazz : classes) {
+                results.addAll(findSubclasses(clazz.getId()));
+            }
+        } else if (queryParams.containsKey("type")) {
+            String nodeType = queryParams.get("type").toUpperCase();
+            results = nodeRepository.findByNodeType(nodeType);
+            
+            // Filter by additional criteria
+            if (queryParams.containsKey("public") && "true".equals(queryParams.get("public"))) {
+                results = results.stream()
+                    .filter(n -> Boolean.TRUE.equals(n.getIsPublic()))
+                    .toList();
+            }
+            if (queryParams.containsKey("package")) {
+                String packageName = queryParams.get("package");
+                results = results.stream()
+                    .filter(n -> packageName.equals(n.getPackageName()))
+                    .toList();
+            }
+        } else if (queryParams.containsKey("name")) {
+            results = nodeRepository.searchByName(queryParams.get("name"));
+        }
+        
+        return results;
+    }
 }
