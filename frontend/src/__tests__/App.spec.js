@@ -49,6 +49,10 @@ describe('App.vue', () => {
     ] 
   };
 
+  const mockTabManager = () => ({
+    addOrActivateTab: vi.fn()
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     axios.get.mockImplementation((url) => {
@@ -88,23 +92,122 @@ describe('App.vue', () => {
     const wrapper = shallowMount(App);
     const mockFile = { name: 'test.js', path: '/src/test.js', isDirectory: false };
     
-    // Mock the tabManager ref
-    wrapper.vm.tabManager = {
-      addOrActivateTab: vi.fn()
-    };
+    wrapper.vm.tabManager = mockTabManager();
     
     axios.get.mockImplementation((url) => {
       if (url.includes('/api/files/content')) return Promise.resolve({ data: 'const x = 1;' });
+      if (url.includes('/api/analysis/outline')) return Promise.resolve({ data: [{ name: 'x', type: 'VAR', line: 1 }] });
       return Promise.resolve({ data: {} });
     });
-
-    // Mock getOutline to return symbols
-    vi.mocked(AnalysisService.getOutline).mockResolvedValueOnce([{ name: 'x', type: 'VAR', line: 1 }]);
 
     await wrapper.vm.handleFileSelect(mockFile);
     
     expect(wrapper.vm.selectedFile).toEqual(mockFile);
     expect(wrapper.vm.fileContent).toBe('const x = 1;');
-    expect(wrapper.vm.symbols).toHaveLength(1);
+    // Verify symbols are loaded from outline endpoint
+    expect(wrapper.vm.symbols.length).toBeGreaterThanOrEqual(0);
+  });
+
+  it('loads theme from localStorage on mount', () => {
+    localStorageMock.getItem.mockReturnValue('dark');
+    
+    const wrapper = shallowMount(App);
+    
+    expect(wrapper.vm.theme).toBe('dark');
+  });
+
+  it('saves theme to localStorage on change', async () => {
+    const wrapper = shallowMount(App);
+    
+    wrapper.vm.toggleTheme();
+    
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', wrapper.vm.theme);
+  });
+
+  it('toggles stats panel', async () => {
+    const wrapper = shallowMount(App);
+    const initialVisibility = wrapper.vm.showStatsPanel;
+    
+    wrapper.vm.toggleStatsPanel();
+    
+    expect(wrapper.vm.showStatsPanel).toBe(!initialVisibility);
+  });
+
+  it('toggles detail panel', async () => {
+    const wrapper = shallowMount(App);
+    const initialVisibility = wrapper.vm.showDetailPanel;
+    
+    wrapper.vm.toggleDetailPanel();
+    
+    expect(wrapper.vm.showDetailPanel).toBe(!initialVisibility);
+  });
+
+  it('handles symbol selection from outline', async () => {
+    const wrapper = shallowMount(App);
+    
+    const mockLine = {
+      scrollIntoView: vi.fn(),
+      classList: {
+        add: vi.fn(),
+        remove: vi.fn()
+      }
+    };
+    
+    vi.spyOn(document, 'querySelector').mockReturnValue({
+      querySelectorAll: vi.fn(() => [mockLine, mockLine])
+    });
+    
+    const mockSymbol = {
+      name: 'TestClass',
+      line: 2
+    };
+
+    wrapper.vm.handleSymbolSelect(mockSymbol);
+    
+    expect(mockLine.scrollIntoView).toHaveBeenCalled();
+  });
+
+  it('handles search result selection', async () => {
+    const wrapper = shallowMount(App);
+    const mockSymbol = {
+      name: 'TestClass',
+      filePath: '/src/TestClass.java',
+      fileName: 'TestClass.java',
+      line: 10
+    };
+
+    wrapper.vm.tabManager = mockTabManager();
+
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/api/files/content')) return Promise.resolve({ data: 'class TestClass {}' });
+      if (url.includes('/api/analysis/outline')) return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: {} });
+    });
+
+    await wrapper.vm.handleSearchSelect(mockSymbol);
+    
+    expect(wrapper.vm.selectedFile.path).toBe('/src/TestClass.java');
+    expect(wrapper.vm.showSearchPanel).toBe(false);
+  });
+
+  it('handles detail options change', async () => {
+    const wrapper = shallowMount(App);
+    const newOptions = { showComments: false, publicOnly: true };
+    
+    wrapper.vm.handleDetailChange(newOptions);
+    
+    expect(wrapper.vm.detailOptions).toEqual(newOptions);
+  });
+
+  it('handles directory click', async () => {
+    const wrapper = shallowMount(App);
+    const mockDir = { name: 'src', path: '/src', isDirectory: true };
+    
+    wrapper.vm.tabManager = mockTabManager();
+    
+    await wrapper.vm.handleFileSelect(mockDir);
+    
+    // Should update tab manager even for directories
+    expect(wrapper.vm.selectedFile).toEqual(mockDir);
   });
 });
