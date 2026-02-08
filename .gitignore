@@ -18,6 +18,7 @@ frontend/dist/
 frontend/dist-ssr/
 frontend/.npm-cache/
 frontend/.npmrc
+frontend/coverage/
 *.local
 
 # Maven / Backend
