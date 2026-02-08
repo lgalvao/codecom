@@ -64,10 +64,51 @@ The system MUST support syntax highlighting and basic structural awareness for t
   - Architectural view (public interfaces only)
 - **FR.31: Project-Wide Export**: Support exporting entire projects or selected packages/files with configurable detail levels.
 
-## 4. UI/UX Requirements
-- **NFR.1: Performance**: Large files (>2000 lines) must render within 200ms without blocking the UI thread.
-- **NFR.2: Aesthetics**: Modern interface with high contrast. Support for **Light** and **Dark** themes.
-- **NFR.3: Responsiveness**: Layout adjusts to different screen sizes without losing core utility.
+### 3.9. Visual Perspective & Code Quality Visualization
+- **FR.32: Complexity Heatmap (Lava Lamp)**: The system shall provide a project-wide heatmap overlay on the file tree, highlighting files with high cyclomatic complexity or frequent change history in warmer colors (red/orange), and stable, simple files in cooler colors (green/blue).
+- **FR.33: Interactive Architecture Flow Graph**: An interactive 2D node-graph visualization showing the full request lifecycle from frontend to backend, including:
+  - Vue Components → TypeScript Services → Spring Controllers → Service Layer → Repositories → Database Tables
+  - Visual representation of dependency injection (@Autowired), API calls (HTTP requests), and database queries
+  - Ability to trace execution flow from UI interactions to data persistence
+- **FR.34: Code Structure Mini-Map**: A vertical scrollbar-adjacent visualization (DNA strip) showing the file's structural layout using color-coded blocks:
+  - Green blocks: Public methods and classes
+  - Blue blocks: Private/protected members
+  - Red blocks: Error handling or exception-related code
+  - Provides spatial orientation in large files (>2000 lines)
+
+### 3.10. Advanced Structural Analysis & Code Intelligence
+- **FR.35: Feature-Based Code Slicing**: Allow users to define logical "slices" or feature domains (e.g., "User Management", "Payment Processing"), then filter the file tree to show only related classes, interfaces, and templates while dimming unrelated code.
+- **FR.36: State Machine Extraction**: For Java Enums or TypeScript Union types used as state variables, automatically generate visual state transition diagrams by analyzing switch statements and conditional blocks that modify those variables.
+- **FR.37: Dead Code Detection & Visualization**: Methods or variables with zero internal callers (within the indexed project scope) shall be displayed with reduced opacity (40% transparency or "ghost" mode) to indicate potential dead code.
+
+### 3.11. Cross-Language Knowledge Graph
+- **FR.38: Relationship Graph Database**: The H2 database shall store a knowledge graph using an edge-list format with the following relationship types:
+  - CALLS: Method/function invocation relationships
+  - INHERITS: Class inheritance and interface implementation
+  - INJECTS: Dependency injection relationships (@Autowired, constructor injection)
+  - MAPS_TO_URL: REST endpoint mappings from controllers to frontend service calls
+- **FR.39: Cross-Language Query Support**: Enable complex queries across language boundaries, such as "Show all Vue components that eventually trigger a write to the ORDERS table" or "Find all Spring services called by the UserManagement component."
+
+### 3.12. Enhanced Interaction Model
+- **FR.40: Definition Peek (Code Bubble)**: When hovering over a symbol, display a small overlay window showing the first 10 lines of the implementation, maintaining context without full navigation.
+- **FR.41: Interactive Breadcrumb Navigation**: Breadcrumbs shall be clickable dropdowns showing sibling methods/classes at every hierarchy level, enabling quick navigation between related logic within the same package or module.
+
+## 4. Non-Functional Requirements
+
+### 4.1. Performance Requirements
+- **NFR.1: Rendering Performance**: Large files (>2000 lines) must render within 200ms without blocking the UI thread.
+- **NFR.2: Graph Rendering**: Interactive flow graphs (FR.33) with up to 100 nodes must render within 500ms and remain interactive at 60 FPS during pan/zoom operations.
+- **NFR.3: Heatmap Calculation**: Complexity heatmap (FR.32) must be calculated and displayed within 2 seconds for projects containing up to 1,000 files.
+- **NFR.4: Knowledge Graph Queries**: Cross-language queries (FR.39) must return results within 1 second for typical project sizes (<10,000 indexed symbols).
+
+### 4.2. UI/UX Requirements
+- **NFR.5: Aesthetics**: Modern interface with high contrast. Support for **Light** and **Dark** themes.
+- **NFR.6: Responsiveness**: Layout adjusts to different screen sizes without losing core utility.
+- **NFR.7: Visual Consistency**: All visualizations (heatmaps, graphs, mini-maps) shall follow the active theme and maintain consistent color schemes.
+
+### 4.3. Scalability Requirements
+- **NFR.8: Large Codebase Support**: System shall handle projects with up to 10,000 files and 100,000 symbols without significant performance degradation.
+- **NFR.9: Incremental Indexing**: Knowledge graph updates shall be incremental, re-indexing only changed files rather than the entire project.
 
 ## 5. Use Case Specifications
 
@@ -362,6 +403,289 @@ The system MUST support syntax highlighting and basic structural awareness for t
 
 ---
 
+#### UC-08: Complexity Heatmap Visualization
+
+**Actor**: Developer
+
+**Preconditions**:
+- Project has been indexed with code metrics.
+- File tree is displayed in the viewer.
+
+**Main Flow**:
+1. Developer opens a project in CodeCom.
+2. System calculates cyclomatic complexity for all indexed files.
+3. System analyzes Git history (if available) for change frequency.
+4. System generates heatmap overlay on file tree:
+   - High complexity/frequent changes: Red/Orange highlighting
+   - Medium complexity: Yellow highlighting
+   - Low complexity/stable files: Green/Blue highlighting
+5. Developer can hover over colored files to see detailed metrics.
+6. Developer identifies high-risk areas at a glance.
+7. Developer can click on highlighted files to investigate further.
+
+**Alternative Flows**:
+- **A1**: Git history unavailable
+  - System calculates heatmap based solely on cyclomatic complexity.
+  - System displays note that change frequency data is unavailable.
+- **A2**: Project too large for real-time calculation
+  - System displays progress indicator during heatmap generation.
+  - System caches results for subsequent views.
+
+**Postconditions**:
+- Heatmap overlay is visible on file tree.
+- Developer can identify "God Objects" and high-risk files visually.
+- Heatmap data is cached for performance.
+
+**Performance Requirements**:
+- Heatmap must be calculated within 2 seconds for projects with <1,000 files (NFR.3).
+
+---
+
+#### UC-09: Interactive Architecture Flow Visualization
+
+**Actor**: Developer
+
+**Preconditions**:
+- Project has been fully indexed with cross-language relationships.
+- Knowledge graph contains CALLS, INJECTS, and MAPS_TO_URL relationships.
+
+**Main Flow**:
+1. Developer activates architecture flow visualization.
+2. System displays interactive 2D node graph showing:
+   - Vue Components (frontend layer)
+   - TypeScript Services (API layer)
+   - Spring Controllers (backend entry points)
+   - Service Layer (business logic)
+   - Repositories (data access)
+   - Database Tables (persistence)
+3. System draws edges representing:
+   - API calls from frontend to backend
+   - Dependency injection (@Autowired)
+   - Database queries
+4. Developer selects a starting point (e.g., a UI button click).
+5. System highlights the execution path through all layers.
+6. Developer can pan, zoom, and interact with nodes.
+7. Developer clicks on a node to view code details.
+
+**Alternative Flows**:
+- **A1**: Filter by feature/domain
+  - Developer applies feature filter (e.g., "User Management").
+  - System dims or hides nodes not related to that feature.
+- **A2**: Export graph visualization
+  - Developer requests export of current graph view.
+  - System generates image or interactive HTML export.
+
+**Postconditions**:
+- Developer understands full request lifecycle from UI to database.
+- Execution paths are traceable across language boundaries.
+- Graph state can be saved and restored.
+
+**Performance Requirements**:
+- Graph with <100 nodes must render within 500ms (NFR.2).
+- Interactions must maintain 60 FPS during pan/zoom (NFR.2).
+
+---
+
+#### UC-10: Code Structure Mini-Map Navigation
+
+**Actor**: Developer
+
+**Preconditions**:
+- A code file is open in the viewer.
+- File has been parsed with symbol information.
+
+**Main Flow**:
+1. Developer opens a large file (>500 lines).
+2. System displays mini-map adjacent to scrollbar showing:
+   - Green blocks: Public methods/classes
+   - Blue blocks: Private/protected members
+   - Red blocks: Error handling code
+3. Developer scrolls through file.
+4. System updates viewport indicator on mini-map.
+5. Developer clicks on a specific block in mini-map.
+6. System jumps to that code location.
+7. Developer can quickly orient within large files.
+
+**Alternative Flows**:
+- **A1**: Small files (<500 lines)
+  - System optionally hides mini-map to save screen space.
+  - Developer can toggle mini-map visibility via settings.
+
+**Postconditions**:
+- Mini-map provides spatial awareness in large files.
+- Navigation via mini-map is instantaneous.
+- Mini-map colors match active theme.
+
+**Quality Requirements**:
+- Mini-map must update within 50ms during scrolling.
+- Color coding must be consistent with theme (NFR.7).
+
+---
+
+#### UC-11: Feature-Based Code Slicing
+
+**Actor**: Developer
+
+**Preconditions**:
+- Project has been indexed with relationship data.
+- Developer wants to focus on a specific feature or domain.
+
+**Main Flow**:
+1. Developer activates "Create Slice" function.
+2. System prompts for slice definition:
+   - Name (e.g., "User Management")
+   - Starting points (key classes, components, or packages)
+3. Developer provides slice criteria.
+4. System analyzes knowledge graph to identify related code:
+   - Direct dependencies
+   - Indirect dependencies (up to configurable depth)
+   - Related test files
+5. System filters file tree to show only slice-relevant files.
+6. System dims or hides unrelated code (90% of codebase).
+7. Developer works within focused context.
+8. Developer can save slice definitions for reuse.
+
+**Alternative Flows**:
+- **A1**: Modify existing slice
+  - Developer edits slice criteria.
+  - System recalculates affected files.
+  - System updates filtered view.
+- **A2**: Multiple concurrent slices
+  - Developer creates overlapping slices.
+  - System allows switching between slice views.
+
+**Postconditions**:
+- File tree shows only relevant code for the feature.
+- Cognitive load is reduced by hiding irrelevant code.
+- Slice definitions are persisted for future sessions.
+
+**Business Rules**:
+- Slices are saved per-project in the H2 database.
+- Slice definitions can be exported/imported as JSON.
+
+---
+
+#### UC-12: State Machine Extraction and Visualization
+
+**Actor**: Developer
+
+**Preconditions**:
+- Project contains Java Enums or TypeScript Union types used as state variables.
+- Code includes switch statements or conditionals that modify state.
+
+**Main Flow**:
+1. Developer selects a state variable (Enum or Union type).
+2. Developer requests state machine extraction.
+3. System analyzes code to identify:
+   - All possible state values
+   - State transition logic (switch/if-else blocks)
+   - Valid transitions between states
+4. System generates visual state transition diagram:
+   - Nodes represent states
+   - Edges represent valid transitions
+   - Labels show transition conditions/triggers
+5. Developer reviews diagram to understand state flow.
+6. Developer can click on states to view related code.
+
+**Alternative Flows**:
+- **A1**: Complex state logic detected
+  - System identifies ambiguous or unreachable states.
+  - System highlights potential issues in the diagram.
+- **A2**: Export state diagram
+  - Developer exports diagram as image or Mermaid format.
+
+**Postconditions**:
+- State machine is visualized as a clear diagram.
+- Developer understands valid state transitions.
+- Complex conditional logic is transformed into visual flow.
+
+**Quality Requirements**:
+- Diagram generation must complete within 3 seconds for enums with <20 states.
+- Diagram must be interactive (clickable states).
+
+---
+
+#### UC-13: Dead Code Detection and Ghost Mode
+
+**Actor**: Developer
+
+**Preconditions**:
+- Project has been fully indexed with call graph data.
+- Symbol usage analysis is complete.
+
+**Main Flow**:
+1. System analyzes all methods and variables for internal callers.
+2. System identifies symbols with zero callers within the project scope.
+3. System displays dead code candidates with 40% opacity ("ghost mode").
+4. Developer reviews ghosted code.
+5. Developer can:
+   - Verify it's truly unused
+   - Check for external callers (libraries, reflection)
+   - Mark as intentional (API endpoints, public interfaces)
+   - Remove dead code safely
+6. System updates ghost status as code changes.
+
+**Alternative Flows**:
+- **A1**: False positive detection
+  - Developer marks method as "intentionally unused" (e.g., public API).
+  - System excludes marked methods from ghost mode.
+  - System persists exclusions in project configuration.
+- **A2**: Entry points and reflection
+  - System identifies potential entry points (main methods, @RestController).
+  - System treats these as having external callers.
+
+**Postconditions**:
+- Dead code is visually distinguished from active code.
+- Developer can confidently identify removal candidates.
+- Ghost mode settings persist across sessions.
+
+**Business Rules**:
+- Public methods in library projects are never ghosted by default.
+- Methods annotated as entry points (@RestController, @Scheduled) are excluded.
+- Ghost mode can be toggled on/off in settings.
+
+---
+
+#### UC-14: Enhanced Definition Peek (Code Bubble)
+
+**Actor**: Developer
+
+**Preconditions**:
+- Developer is viewing code with symbol information available.
+- Hover tooltips are enabled (existing FR.6).
+
+**Main Flow**:
+1. Developer hovers cursor over a symbol (method, class, variable).
+2. System displays enhanced tooltip showing:
+   - Symbol signature
+   - First 10 lines of implementation
+   - File path and line number
+   - Brief documentation (if available)
+3. Developer can:
+   - Read implementation without navigating away
+   - Click to navigate to full definition
+   - Dismiss tooltip by moving cursor
+4. Developer maintains context in current file.
+
+**Alternative Flows**:
+- **A1**: Implementation too long
+  - System shows first 10 lines with "..." indicator.
+  - System includes "View Full Definition" link.
+- **A2**: External symbol (library)
+  - System shows signature and documentation only.
+  - System indicates symbol is external.
+
+**Postconditions**:
+- Developer gains context without "navigation whiplash."
+- Current file and scroll position remain unchanged.
+- Quick understanding of referenced code is achieved.
+
+**Performance Requirements**:
+- Tooltip must appear within 100ms of hover.
+- Code preview must be syntax-highlighted.
+
+---
+
 ### 5.3. Use Case Dependencies
 
 ```
@@ -369,20 +693,116 @@ UC-01 (File Navigation) ──┬──> UC-02 (Statistics)
                           │
                           ├──> UC-03 (Detail Control)
                           │
-                          └──> UC-04 (Symbol Search)
-                                   │
-                                   └──> UC-06 (Advanced Navigation)
+                          ├──> UC-04 (Symbol Search)
+                          │     │
+                          │     └──> UC-06 (Advanced Navigation)
+                          │
+                          ├──> UC-08 (Heatmap)
+                          │
+                          ├──> UC-10 (Mini-Map)
+                          │
+                          └──> UC-13 (Dead Code Detection)
 
 UC-05 (Tab Management) ──────────────> UC-01 (File Navigation)
 
 UC-07 (Export) ──────────────────────> UC-03 (Detail Control)
+
+UC-09 (Flow Graph) ───────────┬──────> UC-11 (Code Slicing)
+                              │
+                              └──────> UC-06 (Advanced Navigation)
+
+UC-11 (Code Slicing) ─────────────────> UC-01 (File Navigation)
+
+UC-12 (State Machine) ────────────────> UC-04 (Symbol Search)
+
+UC-14 (Definition Peek) ──────────────> UC-06 (Advanced Navigation)
 ```
 
 All use cases depend on the system being initialized with a valid project directory.
 
 ## 6. Technical Constraints
+
+### 6.1. Core Technology Stack
 - Built using **Vue 3** (Composition API) and **Vite**.
 - Backend: **Spring Boot 4.0.0** (Java-based REST API).
 - Database: **H2 (File-based)** – Chosen for its seamless Spring Boot integration and built-in inspection tools.
 - UI Library: **BootstrapVueNext** (to be used for standard components).
 - Theme Management: Integrated theme switch (Light/Dark).
+
+### 6.2. Visualization & Analysis Libraries
+The following libraries are recommended for implementing advanced visualization requirements:
+
+| Library | Purpose | Requirements Supported |
+|---------|---------|----------------------|
+| **D3.js** | Interactive data-driven visualizations | FR.33 (Flow Graph), FR.36 (State Diagrams) |
+| **Cytoscape.js** | Graph theory and network visualization | FR.33 (Architecture Flow Graph) |
+| **Force-Graph** | 3D/2D force-directed graphs | FR.33 (Interactive node layouts) |
+| **Shiki** (existing) | Syntax highlighting in tooltips | FR.40 (Definition Peek) |
+
+### 6.3. Backend Analysis Tools
+For advanced code analysis and graph processing on the Java backend:
+
+| Library | Purpose | Requirements Supported |
+|---------|---------|----------------------|
+| **JavaParser** (recommended) | Java code parsing and AST analysis | FR.32 (Complexity metrics), FR.36 (State extraction) |
+| **JGraphT** | Graph algorithms and structures | FR.38-39 (Knowledge Graph), FR.35 (Code slicing) |
+| **Tree-sitter** (via JNI) | Multi-language parsing | FR.32 (TypeScript/JavaScript complexity) |
+
+### 6.4. Database Extensions
+- **H2 Database**: Continue using file-based H2 for primary storage.
+- **Edge-List Schema**: Implement knowledge graph using edge-list format for relationship storage (FR.38).
+- **Future Consideration**: H2 GIS Extension for spatial indexing if project scales to enterprise size (>100,000 symbols).
+
+### 6.5. Performance Optimization
+- **Incremental Parsing**: Update only changed files rather than re-parsing entire project.
+- **Caching Strategy**: Cache heatmap data, complexity metrics, and graph structures.
+- **Lazy Loading**: Load visualization data on-demand to maintain responsive UI.
+- **Web Workers**: Offload heavy computations (complexity calculation, graph analysis) to background threads.
+
+## 7. Implementation Priorities & Phases
+
+The new visualization and analysis requirements are organized into implementation phases based on complexity and dependencies:
+
+### Phase 1: Foundation (High Priority)
+These requirements build on existing functionality and provide immediate value:
+- **FR.38-39**: Cross-Language Knowledge Graph - Extends existing symbol indexing
+- **FR.40**: Definition Peek - Enhances existing hover tooltips (FR.6)
+- **FR.41**: Interactive Breadcrumb Navigation - Extends existing navigation
+- **FR.37**: Dead Code Detection - Uses existing call graph analysis (FR.26-27)
+
+### Phase 2: Visualization Core (Medium Priority)
+Visual enhancements that improve code comprehension:
+- **FR.32**: Complexity Heatmap - Requires complexity analysis implementation
+- **FR.34**: Code Structure Mini-Map - Requires parser integration for symbol extraction
+- **FR.35**: Feature-Based Code Slicing - Builds on Knowledge Graph (FR.38)
+
+### Phase 3: Advanced Analytics (Lower Priority)
+Complex features requiring significant analysis infrastructure:
+- **FR.33**: Interactive Architecture Flow Graph - Requires D3.js/Cytoscape.js integration
+- **FR.36**: State Machine Extraction - Requires advanced AST analysis
+
+### Phase 4: Future Enhancements
+Optional features for enterprise-scale deployments:
+- GIS Extension for spatial indexing (mentioned in Section 6.4)
+- 3D visualization options for large-scale architecture graphs
+- Real-time collaboration features for shared code exploration
+
+## 8. Acceptance Criteria
+
+For each new functional requirement, the following acceptance criteria apply:
+
+### Visualization Requirements (FR.32-34, FR.40)
+- **Accuracy**: Visualizations must accurately reflect the underlying code structure and metrics.
+- **Performance**: Must meet or exceed performance requirements specified in NFR.2-4.
+- **Theme Support**: All visualizations must support both Light and Dark themes (NFR.7).
+- **Interactivity**: User interactions (hover, click, zoom) must be responsive (<100ms response time).
+
+### Analysis Requirements (FR.35-37)
+- **Precision**: Analysis must correctly identify relationships across language boundaries.
+- **Recall**: Analysis should identify at least 95% of valid relationships (may miss dynamic/reflection-based calls).
+- **False Positives**: Dead code detection (FR.37) should have <5% false positive rate for typical codebases.
+
+### Knowledge Graph Requirements (FR.38-39)
+- **Data Integrity**: Relationship data must remain consistent during incremental updates.
+- **Query Performance**: Cross-language queries must return results within 1 second (NFR.4).
+- **Scalability**: Graph structure must support projects with up to 100,000 symbols (NFR.8).
