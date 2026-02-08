@@ -123,7 +123,8 @@ public class AnalysisService {
                             .map(s -> SymbolSearchResult.fromSymbolInfo(s, filePath, fileName))
                             .forEach(results::add);
                     } catch (IOException e) {
-                        // Skip files that can't be parsed
+                        // Log and skip files that can't be parsed
+                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
                     }
                 });
         }

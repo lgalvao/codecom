@@ -18,9 +18,10 @@ const searchQuery = ref('');
 const searchResults = ref<SymbolSearchResult[]>([]);
 const isSearching = ref(false);
 const selectedIndex = ref(0);
+const searchInput = ref<HTMLInputElement | null>(null);
 
-// Debounce search
-let searchTimeout: number | null = null;
+// Debounce search with ref to ensure proper cleanup
+const searchTimeout = ref<number | null>(null);
 
 const performSearch = async () => {
   if (!searchQuery.value.trim()) {
@@ -40,8 +41,8 @@ const performSearch = async () => {
 };
 
 watch(searchQuery, () => {
-  if (searchTimeout) clearTimeout(searchTimeout);
-  searchTimeout = window.setTimeout(performSearch, 300);
+  if (searchTimeout.value) clearTimeout(searchTimeout.value);
+  searchTimeout.value = window.setTimeout(performSearch, 300);
 });
 
 watch(() => props.visible, (visible) => {
@@ -49,10 +50,11 @@ watch(() => props.visible, (visible) => {
     searchQuery.value = '';
     searchResults.value = [];
     selectedIndex.value = 0;
-    // Focus the input when panel becomes visible
+    // Focus the input when panel becomes visible using template ref
     setTimeout(() => {
-      const input = document.querySelector('.symbol-search-input') as HTMLInputElement;
-      if (input) input.focus();
+      if (searchInput.value) {
+        searchInput.value.focus();
+      }
     }, 100);
   }
 });
@@ -129,8 +131,8 @@ const truncatePath = (path: string) => {
         <h6 class="mb-0 fw-bold">Symbol Search</h6>
       </div>
       <BFormInput
+        ref="searchInput"
         v-model="searchQuery"
-        class="symbol-search-input"
         placeholder="Search for classes, methods, functions..."
         @keydown="handleKeyDown"
       />
