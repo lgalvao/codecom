@@ -119,6 +119,16 @@ import * as d3 from 'd3'
 import type { Selection, Simulation, SimulationNodeDatum, SimulationLinkDatum } from 'd3'
 import FlowGraphService, { type FlowGraphNode, type FlowGraphEdge, type FlowGraphResponse } from '../services/FlowGraphService'
 
+// D3-compatible node and link types
+interface D3Node extends SimulationNodeDatum, FlowGraphNode {}
+interface D3Link extends SimulationLinkDatum<D3Node> {
+  sourceId: string
+  targetId: string
+  edgeType: string
+  label: string
+  lineNumber?: number
+}
+
 // Emits
 defineEmits<{
   close: []
@@ -135,7 +145,7 @@ const searchTerm = ref('')
 const selectedNode = ref<FlowGraphNode | null>(null)
 
 // D3 simulation and elements
-let simulation: Simulation<SimulationNodeDatum, SimulationLinkDatum<SimulationNodeDatum>> | null = null
+let simulation: Simulation<D3Node, D3Link> | null = null
 let svg: Selection<SVGSVGElement, unknown, null, undefined> | null = null
 let g: Selection<SVGGElement, unknown, null, undefined> | null = null
 
@@ -205,9 +215,10 @@ function highlightSearchResults() {
   
   const term = searchTerm.value.toLowerCase()
   svg.selectAll('.node')
-    .classed('search-highlight', (d: any) => 
-      d.name.toLowerCase().includes(term)
-    )
+    .classed('search-highlight', (d: unknown) => {
+      const node = d as D3Node
+      return node.name.toLowerCase().includes(term)
+    })
 }
 
 function getConnections(nodeId: string) {
@@ -296,13 +307,13 @@ function initializeVisualization() {
 function drawGraph(width: number, height: number) {
   if (!g || !flowGraphData.value) return
   
-  const nodes = filteredNodes.value.map(n => ({ ...n }))
-  const edges = filteredEdges.value.map(e => ({ ...e }))
+  const nodes: D3Node[] = filteredNodes.value.map(n => ({ ...n }))
+  const edges: D3Link[] = filteredEdges.value.map(e => ({ ...e }))
   
   // Create simulation
-  simulation = d3.forceSimulation(nodes as any)
-    .force('link', d3.forceLink(edges as any)
-      .id((d: any) => d.id)
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(edges)
+      .id((d: D3Node) => d.id)
       .distance(100))
     .force('charge', d3.forceManyBody().strength(-300))
     .force('center', d3.forceCenter(width / 2, height / 2))
@@ -316,7 +327,7 @@ function drawGraph(width: number, height: number) {
     .attr('class', 'edge')
     .attr('stroke', '#999')
     .attr('stroke-width', 2)
-    .attr('stroke-dasharray', (d: FlowGraphEdge) => d.edgeType === 'INHERITS' ? '5,5' : '0')
+    .attr('stroke-dasharray', (d: D3Link) => d.edgeType === 'INHERITS' ? '5,5' : '0')
     .attr('marker-end', 'url(#arrowhead)')
   
   // Draw nodes
@@ -326,11 +337,11 @@ function drawGraph(width: number, height: number) {
     .join('circle')
     .attr('class', 'node')
     .attr('r', 10)
-    .attr('fill', (d: FlowGraphNode) => getLayerColor(d.layer))
+    .attr('fill', (d: D3Node) => getLayerColor(d.layer))
     .attr('stroke', '#fff')
     .attr('stroke-width', 2)
     .call(drag(simulation) as any)
-    .on('click', (_event: any, d: FlowGraphNode) => {
+    .on('click', (_event: unknown, d: D3Node) => {
       selectedNode.value = d
     })
     .on('mouseover', function(this: SVGCircleElement) {
@@ -348,7 +359,7 @@ function drawGraph(width: number, height: number) {
     .attr('class', 'node-label')
     .attr('text-anchor', 'middle')
     .attr('dy', -15)
-    .text((d: FlowGraphNode) => d.name)
+    .text((d: D3Node) => d.name)
   
   // Add arrow markers
   svg?.append('defs').append('marker')
@@ -366,40 +377,40 @@ function drawGraph(width: number, height: number) {
   // Update positions on tick
   simulation.on('tick', () => {
     link
-      .attr('x1', (d: any) => d.source.x)
-      .attr('y1', (d: any) => d.source.y)
-      .attr('x2', (d: any) => d.target.x)
-      .attr('y2', (d: any) => d.target.y)
+      .attr('x1', (d: D3Link) => (d.source as D3Node).x || 0)
+      .attr('y1', (d: D3Link) => (d.source as D3Node).y || 0)
+      .attr('x2', (d: D3Link) => (d.target as D3Node).x || 0)
+      .attr('y2', (d: D3Link) => (d.target as D3Node).y || 0)
     
     node
-      .attr('cx', (d: any) => d.x)
-      .attr('cy', (d: any) => d.y)
+      .attr('cx', (d: D3Node) => d.x || 0)
+      .attr('cy', (d: D3Node) => d.y || 0)
     
     label
-      .attr('x', (d: any) => d.x)
-      .attr('y', (d: any) => d.y)
+      .attr('x', (d: D3Node) => d.x || 0)
+      .attr('y', (d: D3Node) => d.y || 0)
   })
 }
 
-function drag(simulation: Simulation<SimulationNodeDatum, SimulationLinkDatum<SimulationNodeDatum>>) {
-  function dragstarted(event: any) {
+function drag(simulation: Simulation<D3Node, D3Link>) {
+  function dragstarted(event: d3.D3DragEvent<SVGCircleElement, D3Node, D3Node>) {
     if (!event.active) simulation.alphaTarget(0.3).restart()
     event.subject.fx = event.subject.x
     event.subject.fy = event.subject.y
   }
   
-  function dragged(event: any) {
+  function dragged(event: d3.D3DragEvent<SVGCircleElement, D3Node, D3Node>) {
     event.subject.fx = event.x
     event.subject.fy = event.y
   }
   
-  function dragended(event: any) {
+  function dragended(event: d3.D3DragEvent<SVGCircleElement, D3Node, D3Node>) {
     if (!event.active) simulation.alphaTarget(0)
     event.subject.fx = null
     event.subject.fy = null
   }
   
-  return d3.drag()
+  return d3.drag<SVGCircleElement, D3Node>()
     .on('start', dragstarted)
     .on('drag', dragged)
     .on('end', dragended)

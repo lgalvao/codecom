@@ -151,7 +151,7 @@ public class FlowGraphService {
      * Detect architectural layer based on file path and node type
      */
     private String detectLayer(CodeNode node) {
-        String filePath = node.getFilePath().toLowerCase();
+        String filePath = node.getFilePath().toLowerCase(java.util.Locale.ROOT);
         String nodeType = node.getNodeType();
         
         // Frontend layers
@@ -203,17 +203,18 @@ public class FlowGraphService {
      * Generate a human-readable label for an edge
      */
     private String generateEdgeLabel(CodeRelationship rel) {
-        switch (rel.getRelationshipType()) {
-            case "CALLS":
+        String relType = rel.getRelationshipType().toLowerCase(java.util.Locale.ROOT);
+        switch (relType) {
+            case "calls":
                 return "calls";
-            case "INHERITS":
+            case "inherits":
                 return "extends/implements";
-            case "USES":
+            case "uses":
                 return "uses";
-            case "DEPENDS_ON":
+            case "depends_on":
                 return "depends on";
             default:
-                return rel.getRelationshipType().toLowerCase();
+                return relType;
         }
     }
     
