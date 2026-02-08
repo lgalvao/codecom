@@ -5,6 +5,7 @@ import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstr
 import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
+import CodeMiniMap from './components/CodeMiniMap.vue';
 import OutlineView from './components/OutlineView.vue';
 import CodeStatistics from './components/CodeStatistics.vue';
 import DetailControlPanel from './components/DetailControlPanel.vue';
@@ -279,6 +280,13 @@ const filteredSymbols = computed(() => {
   }
   
   return symbols.value;
+});
+
+// FR.34: Compute total lines for mini-map
+const totalLines = computed(() => {
+  return fileContent.value && typeof fileContent.value === 'string' 
+    ? fileContent.value.split('\n').length 
+    : 0;
 });
 
 const hiddenLines = computed(() => {
@@ -657,7 +665,7 @@ onMounted(() => {
             </div>
           </div>
           <template v-else>
-            <div class="flex-grow-1 h-100 overflow-hidden">
+            <div class="flex-grow-1 h-100 overflow-hidden position-relative">
                <CodeHighlighter 
                  :code="fileContent" 
                  :filename="selectedFile.name" 
@@ -666,6 +674,11 @@ onMounted(() => {
                  :dead-code-lines="deadCodeLines"
                  :click-navigation-mode="clickNavigationMode"
                  @navigate-to-symbol="handleNavigateToSymbol"
+               />
+               <CodeMiniMap 
+                 :symbols="symbols"
+                 :file-content="fileContent"
+                 :total-lines="totalLines"
                />
             </div>
             <!-- Outline Sidebar -->
