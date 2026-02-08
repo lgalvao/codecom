@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
-import { BButton, BNavbar, BNavbarBrand, BFormSelect } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, Settings } from 'lucide-vue-next';
+import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
+import { Sun, Moon, FolderOpen, Code, Settings, BarChart3, Sliders } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import OutlineView from './components/OutlineView.vue';
+import CodeStatistics from './components/CodeStatistics.vue';
+import DetailControlPanel from './components/DetailControlPanel.vue';
 import { getOutline as getFrontendOutline } from './services/AnalysisService';
 
 const theme = ref('dark');
@@ -15,6 +17,19 @@ const fileContent = ref('');
 const symbols = ref([]);
 const isLoading = ref(false);
 const complexity = ref('standard');
+const showStatsPanel = ref(false);
+const showDetailPanel = ref(false);
+const statsComponent = ref(null);
+const detailOptions = ref({
+  showComments: true,
+  showImports: true,
+  showPrivateMembers: true,
+  showMethodBodies: true,
+  showParameterTypes: true,
+  showParameters: true,
+  abbreviateTypes: false,
+  onlyPublic: false,
+});
 
 const complexityOptions = [
   { text: 'Simplified', value: 'simplified' },
@@ -52,11 +67,32 @@ const handleFileSelect = async (node) => {
       const outlineRes = await axios.get(`http://localhost:8080/api/analysis/outline?path=${encodeURIComponent(node.path)}`);
       symbols.value = outlineRes.data;
     }
+
+    // Load statistics for the selected file
+    if (statsComponent.value) {
+      statsComponent.value.loadStatistics();
+    }
   } catch (error) {
     fileContent.value = 'Error loading file content: ' + error.message;
   } finally {
     isLoading.value = false;
   }
+};
+
+const handleDetailChange = (options) => {
+  detailOptions.value = options;
+  // In a future implementation, this would filter the code display
+  console.log('Detail options changed:', options);
+};
+
+const toggleStatsPanel = () => {
+  showStatsPanel.value = !showStatsPanel.value;
+  if (showDetailPanel.value) showDetailPanel.value = false;
+};
+
+const toggleDetailPanel = () => {
+  showDetailPanel.value = !showDetailPanel.value;
+  if (showStatsPanel.value) showStatsPanel.value = false;
 };
 
 const filteredSymbols = computed(() => {
@@ -130,11 +166,28 @@ onMounted(() => {
           style="width: 150px;" 
         />
         
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showStatsPanel }]" 
+          @click="toggleStatsPanel"
+          title="Statistics"
+        >
+          <BarChart3 :size="20" />
+        </BButton>
+        
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showDetailPanel }]" 
+          @click="toggleDetailPanel"
+          title="Detail Control"
+        >
+          <Sliders :size="20" />
+        </BButton>
+        
         <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
           <Sun v-if="theme === 'dark'" :size="20" />
           <Moon v-else :size="20" />
         </BButton>
-        <Settings variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="cursor-pointer" :size="20" />
       </div>
     </BNavbar>
 
@@ -206,6 +259,32 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Statistics Panel -->
+    <BOffcanvas 
+      v-model="showStatsPanel" 
+      placement="end"
+      :title="'Statistics - ' + (selectedFile?.name || 'No file selected')"
+    >
+      <CodeStatistics 
+        v-if="selectedFile"
+        ref="statsComponent"
+        :path="selectedFile.path"
+        :is-directory="false"
+      />
+      <div v-else class="text-muted text-center p-3">
+        Select a file to view statistics
+      </div>
+    </BOffcanvas>
+
+    <!-- Detail Control Panel -->
+    <BOffcanvas 
+      v-model="showDetailPanel" 
+      placement="end"
+      title="Detail Control"
+    >
+      <DetailControlPanel @change="handleDetailChange" />
+    </BOffcanvas>
   </div>
 </template>
 
