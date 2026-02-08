@@ -18,8 +18,14 @@ const props = defineProps({
   hiddenLines: {
     type: Set,
     default: () => new Set()
+  },
+  clickNavigationMode: {
+    type: Boolean,
+    default: false
   }
 });
+
+const emit = defineEmits(['navigate-to-symbol']);
 
 const highlightedCode = ref('');
 const isLoading = ref(true);
@@ -92,6 +98,35 @@ onMounted(async () => {
 watch([() => props.code, () => props.filename, () => props.theme, () => props.hiddenLines], () => {
   updateHighlighting();
 });
+
+/**
+ * Handle clicks on code to enable symbol navigation
+ * Implements FR.24 (Control-Click) and FR.25 (Click Navigation Mode)
+ */
+const handleCodeClick = (event) => {
+  // Check if control/cmd key is pressed OR click navigation mode is enabled
+  const shouldNavigate = event.ctrlKey || event.metaKey || props.clickNavigationMode;
+  
+  if (!shouldNavigate) return;
+  
+  // Get the clicked element
+  let target = event.target;
+  
+  // Find the nearest token element
+  while (target && !target.classList.contains('line')) {
+    if (target.tagName === 'SPAN' && target.textContent.trim()) {
+      const symbolText = target.textContent.trim();
+      
+      // Only navigate if it looks like a symbol (alphanumeric + underscore)
+      if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbolText)) {
+        event.preventDefault();
+        emit('navigate-to-symbol', symbolText);
+        return;
+      }
+    }
+    target = target.parentElement;
+  }
+};
 </script>
 
 <template>
@@ -99,7 +134,13 @@ watch([() => props.code, () => props.filename, () => props.theme, () => props.hi
     <output v-if="isLoading && !highlightedCode" class="d-flex justify-content-center align-items-center h-100">
       <div class="spinner-border text-primary" role="status"></div>
     </output>
-    <div v-else class="shiki-container" v-html="highlightedCode"></div>
+    <div 
+      v-else 
+      class="shiki-container" 
+      :class="{ 'click-navigation-active': clickNavigationMode }"
+      v-html="highlightedCode"
+      @click="handleCodeClick"
+    ></div>
   </div>
 </template>
 
@@ -135,5 +176,19 @@ watch([() => props.code, () => props.filename, () => props.theme, () => props.hi
   filter: blur(0.5px);
   pointer-events: none; /* Disable interaction with faded lines */
   user-select: none;    /* Prevent selection of faded lines */
+}
+
+/* Click navigation mode cursor */
+.click-navigation-active {
+  cursor: pointer;
+}
+
+.click-navigation-active .line span {
+  cursor: pointer;
+}
+
+.click-navigation-active .line span:hover {
+  text-decoration: underline;
+  text-decoration-style: dotted;
 }
 </style>
