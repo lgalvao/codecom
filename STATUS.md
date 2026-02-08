@@ -38,39 +38,62 @@ This document tracks the implementation progress of **CodeCom** against the requ
 | **FR.28** | Test References | 🟢 Done | Test reference tracking implemented with TestReferences component. |
 | **FR.29** | Cross-Reference Navigation | 🟢 Done | Bidirectional navigation history service implemented. |
 | **FR.30** | Multi-Format Export | 🟢 Done | Export UI and service fully tested. Markdown and PDF/HTML export working. |
-| **FR.31** | Project-Wide Export | 🟢 Partial | Export service supports project-wide export; backend integration pending. |
+| **FR.31** | Project-Wide Export | 🟢 Done | Backend integration complete. Multi-file export via API endpoint working. |
 
 ## Technical Summary
 - **Backend**: Spring Boot 4 / Java 25 is operational.
-  - Test Coverage: **94%** ✅ (38 tests)
+  - Test Coverage: **94%** ✅ (48 tests)
+  - New endpoints: `/api/export` for project-wide export
   - New endpoint: `/api/analysis/definition` for hover tooltips
 - **Frontend**: Vue 3.5 / Vite is operational with BootstrapVueNext.
-  - Test Coverage: **~76%** ✅ (264 tests, up from 231)
+  - Test Coverage: **~76%** ✅ (265 tests, up from 264)
   - Components Coverage: **~90%**
-- **Total Tests**: 302 passing (264 frontend + 38 backend)
+- **Total Tests**: 313 passing (265 frontend + 48 backend)
 
 ## Recent Improvements (Current Session)
+- ✅ **FR.31**: Implemented backend integration for project-wide multi-file export
+- ✅ **Export Service**: Added backend API for exporting multiple files in markdown/HTML format
+- ✅ **Export Dialog**: Enhanced to support package and project-wide export scopes
+- ✅ **Test Coverage**: Added 10 new backend tests for export functionality (38 → 48 tests)
+- ✅ **Test Coverage**: Updated ExportDialog tests (+1 frontend test)
 - ✅ **FR.24**: Implemented control-click navigation with symbol detection
 - ✅ **FR.25**: Implemented click navigation mode toggle with localStorage persistence
 - ✅ **FR.30**: Added comprehensive ExportService tests (15 new tests)
 - ✅ **FR.30**: Added comprehensive ExportDialog tests (18 new tests)
 - ✅ **Export Functionality**: Markdown and PDF/HTML export fully tested
-- ✅ **Test Coverage**: Improved from 231 to 264 frontend tests (+33 tests)
+- ✅ **Test Coverage**: Improved from 231 to 265 frontend tests (+34 tests)
 - ✅ **Test Coverage**: ExportService coverage improved from 0% to ~90%
 - ✅ **Test Coverage**: ExportDialog coverage improved from 40% to ~85%
 
 ## Current Implementation Status
-- 🟢 **Done**: 29/31 (94%)
-- 🟢 **Partial**: 2/31 (6%)
+- 🟢 **Done**: 30/31 (97%)
+- 🟢 **Partial**: 1/31 (3%)
 - 🔴 **Missing**: 0/31 (0%)
 
 ## Next High-Priority Gaps
-1. **FR.31: Project-Wide Export**: Backend integration for exporting multiple files
-2. **Test Coverage**: Target 80% frontend coverage (currently ~76%)
+1. **Test Coverage**: Target 80% frontend coverage (currently ~76%)
    - Main gap: App.vue at ~53% needs integration tests
-3. **FR.1, FR.9, FR.10**: Review and enhance if needed
+2. **FR.1, FR.9, FR.10**: Review and enhance if needed
+3. **Advanced Features (FR.32-41)**: Begin implementation of foundation features
 
 ## Implementation History
+
+### Session 4 - Project-Wide Export (February 8, 2026)
+**Focus**: Complete FR.31 backend integration for multi-file export
+
+**Achievements**:
+- ✅ Implemented backend ExportService with support for multiple files
+- ✅ Created `/api/export` REST endpoint for batch file export
+- ✅ Enhanced ExportDialog to support package and project-wide export
+- ✅ Added 10 new backend tests (ExportServiceTest, ExportControllerTest)
+- ✅ Updated frontend tests to match new functionality
+- ✅ Backend test coverage remains at 94% (48 tests total)
+- ✅ Frontend test coverage maintained at ~76% (265 tests total)
+
+**New Components**: ExportService.java, ExportController.java
+**New DTOs**: ExportRequest.java, ExportResult.java
+**API Endpoints**: `/api/export` (POST) for multi-file export
+**Files Modified**: ExportService.ts, ExportDialog.vue
 
 ### Session 3 - Export Testing & Navigation (February 8, 2026)
 **Focus**: Complete control-click navigation and export testing
@@ -185,12 +208,14 @@ The project is **production-ready** for core features:
 - ✅ Comprehensive documentation
 
 ### Future Enhancements
-1. **FR.31**: Implement backend support for project-wide multi-file export
-2. **Test Coverage**: Add App.vue integration tests to reach 80% coverage target
-3. **Performance**: Consider code-splitting for large chunks (address build warning)
-4. **FR.9**: Enhance database integration for project indexing
-5. **FR.10**: Expand user preferences system (more settings, cloud sync)
-6. **Advanced Features**: Implement new SRS requirements (FR.32-41) for enhanced visualization and analysis
+1. **Test Coverage**: Add App.vue integration tests to reach 80% coverage target
+2. **Performance**: Consider code-splitting for large chunks (address build warning)
+3. **FR.9**: Enhance database integration for project indexing
+4. **FR.10**: Expand user preferences system (more settings, cloud sync)
+5. **Advanced Features**: Implement new SRS requirements (FR.32-41) for enhanced visualization and analysis
+   - Phase 1 (Foundation): FR.38-39 (Knowledge Graph), FR.40 (Definition Peek), FR.41 (Breadcrumb), FR.37 (Dead Code)
+   - Phase 2 (Visualization): FR.32 (Heatmap), FR.34 (Mini-Map), FR.35 (Code Slicing)
+   - Phase 3 (Analytics): FR.33 (Flow Graph), FR.36 (State Machine)
 
 ### Technical Debt
 - None identified

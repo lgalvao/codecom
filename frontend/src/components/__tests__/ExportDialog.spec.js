@@ -265,7 +265,27 @@ describe('ExportDialog.vue', () => {
 
     expect(options[1].attributes('disabled')).toBeDefined();
     expect(options[2].attributes('disabled')).toBeDefined();
-    expect(options[1].text()).toContain('Not implemented');
-    expect(options[2].text()).toContain('Not implemented');
+    expect(options[1].text()).toContain('Not available');
+    expect(options[2].text()).toContain('Not available');
+  });
+  
+  it('should have package and project scope options enabled when props provided', () => {
+    const wrapper = mount(ExportDialog, {
+      props: {
+        ...defaultProps,
+        filePath: '/path/to/test.js',
+        allFiles: [
+          { path: '/path/to/test.js', isDirectory: false },
+          { path: '/path/to/other.js', isDirectory: false }
+        ]
+      }
+    });
+
+    const scopeSelect = wrapper.find('select');
+    const options = scopeSelect.findAll('option');
+
+    // Options should NOT be disabled when props are provided
+    expect(options[1].attributes('disabled')).toBeUndefined();
+    expect(options[2].attributes('disabled')).toBeUndefined();
   });
 });
