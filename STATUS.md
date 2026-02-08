@@ -16,18 +16,18 @@ This document tracks the implementation progress of **CodeCom** against the requ
 | **FR.8** | Tab Management | 🔴 Missing | Currently only supports single file view. |
 | **FR.9** | Project Indexing | 🟢 Partial | Backend accesses filesystem; database integration is basic. |
 | **FR.10** | User Preferences | 🟢 Partial | Theme preference (Light/Dark) is persistent. |
-| **FR.11** | Total Line Count | 🔴 Missing | Statistics service not yet implemented. |
-| **FR.12** | Code Line Count (Non-Comment, Non-Blank) | 🔴 Missing | Statistics service not yet implemented. |
-| **FR.13** | Method Statistics | 🔴 Missing | Statistics service not yet implemented. |
-| **FR.14** | Structure Statistics | 🔴 Missing | Statistics service not yet implemented. |
+| **FR.11** | Total Line Count | 🟢 Done | Statistics service implemented and tested. |
+| **FR.12** | Code Line Count (Non-Comment, Non-Blank) | 🟢 Done | Statistics service calculates code lines accurately. |
+| **FR.13** | Method Statistics | 🟢 Done | Statistics service counts methods including constructors. |
+| **FR.14** | Structure Statistics | 🟢 Done | Statistics service counts classes, interfaces, records, packages. |
 | **FR.15** | Full Detail View | 🟢 Done | Current default view shows all code. |
-| **FR.16** | No Comments Mode | 🔴 Missing | Comment filtering not implemented. |
-| **FR.17** | Signatures Only Mode | 🟢 Partial | Exists via LoD toggle but needs refinement. |
-| **FR.18** | Abbreviated Parameter Types | 🔴 Missing | Type abbreviation logic not implemented. |
-| **FR.19** | No Parameter Types | 🔴 Missing | Parameter type hiding not implemented. |
-| **FR.20** | No Parameters Mode | 🔴 Missing | Parameter hiding not implemented. |
-| **FR.21** | Public Members Only | 🟢 Partial | Filter exists but needs public-only option. |
-| **FR.22** | Hide Imports | 🟢 Done | Import filtering already available. |
+| **FR.16** | No Comments Mode | 🟢 Partial | UI toggle exists; filtering logic needs integration. |
+| **FR.17** | Signatures Only Mode | 🟢 Partial | Exists via LoD toggle and detail panel; needs refinement. |
+| **FR.18** | Abbreviated Parameter Types | 🟢 Partial | UI toggle exists; type abbreviation logic not implemented. |
+| **FR.19** | No Parameter Types | 🟢 Partial | UI toggle exists; parameter type hiding not implemented. |
+| **FR.20** | No Parameters Mode | 🟢 Partial | UI toggle exists; parameter hiding not implemented. |
+| **FR.21** | Public Members Only | 🟢 Partial | UI toggle exists; filter needs backend integration. |
+| **FR.22** | Hide Imports | 🟢 Partial | UI toggle exists; import filtering implemented. |
 | **FR.23** | Package Navigation | 🔴 Missing | Next/previous navigation not implemented. |
 | **FR.24** | Control-Click Navigation | 🔴 Missing | Symbol navigation not implemented. |
 | **FR.25** | Click Navigation Mode | 🔴 Missing | Navigation mode toggle not implemented. |

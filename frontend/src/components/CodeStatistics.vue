@@ -23,8 +23,8 @@ const loadStatistics = async () => {
     } else {
       statistics.value = await getFileStatistics(props.path);
     }
-  } catch (e: any) {
-    error.value = e.message || 'Failed to load statistics';
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load statistics';
     console.error('Error loading statistics:', e);
   } finally {
     loading.value = false;

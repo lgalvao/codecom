@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, Settings, BarChart3, Sliders } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import OutlineView from './components/OutlineView.vue';

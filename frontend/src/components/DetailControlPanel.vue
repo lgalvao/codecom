@@ -95,18 +95,8 @@ const presets = {
   }
 };
 
-const applyPreset = (presetKey: keyof typeof presets) => {
-  options.value = { ...presets[presetKey].options };
-  emitChange();
-};
-
 const emitChange = () => {
   emit('change', { ...options.value });
-};
-
-const toggleOption = (key: keyof DetailControlOptions) => {
-  options.value[key] = !options.value[key];
-  emitChange();
 };
 </script>
 

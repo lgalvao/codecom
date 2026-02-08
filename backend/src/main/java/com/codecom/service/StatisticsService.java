@@ -190,7 +190,12 @@ public class StatisticsService {
 
     private boolean isCodeFile(String path) {
         String ext = getExtension(path);
-        return ext.matches("java|js|ts|jsx|tsx|py|rb|go|rs|kt|scala|cs|cpp|c|h|hpp");
+        Set<String> codeExtensions = Set.of(
+            "java", "js", "ts", "jsx", "tsx", 
+            "py", "rb", "go", "rs", "kt", "scala", 
+            "cs", "cpp", "c", "h", "hpp"
+        );
+        return codeExtensions.contains(ext);
     }
 
     private String getExtension(String path) {
