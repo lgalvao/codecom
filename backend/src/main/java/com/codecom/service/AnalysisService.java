@@ -1,6 +1,7 @@
 package com.codecom.service;
 
 import com.codecom.dto.SymbolInfo;
+import com.codecom.dto.SymbolSearchResult;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -10,11 +11,13 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 public class AnalysisService {
@@ -89,5 +92,54 @@ public class AnalysisService {
             });
         }
         return symbols;
+    }
+
+    /**
+     * Search for symbols across all Java files in the project
+     * @param rootPath The root directory to search
+     * @param query The search query (case-insensitive)
+     * @return List of matching symbols with file information
+     */
+    public List<SymbolSearchResult> searchSymbols(String rootPath, String query) throws IOException {
+        List<SymbolSearchResult> results = new ArrayList<>();
+        String lowerQuery = query.toLowerCase();
+        
+        // Walk the file tree and search Java files
+        try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
+            paths
+                .filter(Files::isRegularFile)
+                .filter(p -> p.toString().endsWith(".java"))
+                .filter(p -> !p.toString().contains("node_modules"))
+                .filter(p -> !p.toString().contains("target"))
+                .filter(p -> !p.toString().contains(".git"))
+                .forEach(path -> {
+                    try {
+                        List<SymbolInfo> symbols = getOutline(path.toString());
+                        String fileName = path.getFileName().toString();
+                        String filePath = path.toString();
+                        
+                        symbols.stream()
+                            .filter(s -> s.name().toLowerCase().contains(lowerQuery))
+                            .map(s -> SymbolSearchResult.fromSymbolInfo(s, filePath, fileName))
+                            .forEach(results::add);
+                    } catch (IOException e) {
+                        // Log and skip files that can't be parsed
+                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
+                    }
+                });
+        }
+        
+        // Sort results by relevance (exact matches first, then alphabetically)
+        results.sort((a, b) -> {
+            boolean aExact = a.name().equalsIgnoreCase(query);
+            boolean bExact = b.name().equalsIgnoreCase(query);
+            
+            if (aExact && !bExact) return -1;
+            if (!aExact && bExact) return 1;
+            
+            return a.name().compareToIgnoreCase(b.name());
+        });
+        
+        return results;
     }
 }

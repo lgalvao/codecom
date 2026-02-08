@@ -10,7 +10,7 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "type-check": "vue-tsc --noEmit",
-    "lint": "eslint src --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+    "lint": "eslint src --ext .vue,.js,.jsx,.cjs,.mjs,.ts --fix"
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",

@@ -10,7 +10,7 @@ This document tracks the implementation progress of **CodeCom** against the requ
 | **FR.2** | Intelligent Collapsing | 🟢 Done | Java boilerplate (get/set/ctors) identified and filterable. |
 | **FR.3** | Scope Isolation | 🔴 Missing | Highlight logic exists, but full isolation/dimming is missing. |
 | **FR.4** | Syntax Highlighting | 🟢 Done | Integrated Shiki for cross-language support. |
-| **FR.5** | Symbol Search | 🔴 Missing | No dedicated symbol search bar in UI. |
+| **FR.5** | Symbol Search | 🟢 Done | Project-wide symbol search with keyboard shortcut (Ctrl+Shift+F). |
 | **FR.6** | Contextual Metadata | 🔴 Missing | Signatures on hover not yet implemented. |
 | **FR.7** | Virtual File Tree | 🟢 Done | Interactive file explorer connected to backend API. |
 | **FR.8** | Tab Management | 🔴 Missing | Currently only supports single file view. |
@@ -44,10 +44,8 @@ This document tracks the implementation progress of **CodeCom** against the requ
 - **Coverage**: JaCoCo integrated; unit tests present for core services.
 
 ## Next High-Priority Gaps
-1. **Statistics (FR.11-FR.14)**: Essential metrics for code comprehension and project overview.
-2. **Detail Control (FR.16-FR.21)**: Multiple levels of abstraction for different use cases.
-3. **Symbol Search (FR.5)**: Critical for fast navigation.
-4. **Tab Management (FR.8)**: Needed for multi-file workflows.
-5. **Advanced Navigation (FR.23-FR.29)**: Enhances code exploration and understanding.
-6. **Export Functionality (FR.30-FR.31)**: Critical for documentation and sharing.
-7. **Contextual Metadata (FR.6)**: Enhances comprehension.
+1. **Tab Management (FR.8)**: Needed for multi-file workflows.
+2. **Advanced Navigation (FR.23-FR.29)**: Enhances code exploration and understanding.
+3. **Export Functionality (FR.30-FR.31)**: Critical for documentation and sharing.
+4. **Contextual Metadata (FR.6)**: Enhances comprehension.
+5. **Scope Isolation (FR.3)**: Complete the partial implementation for better focus.
