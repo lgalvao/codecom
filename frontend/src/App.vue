@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import OutlineView from './components/OutlineView.vue';
@@ -13,6 +13,7 @@ import TabManager from './components/TabManager.vue';
 import HoverTooltip from './components/HoverTooltip.vue';
 import ScopeIsolation from './components/ScopeIsolation.vue';
 import PackageNavigation from './components/PackageNavigation.vue';
+import ExportDialog from './components/ExportDialog.vue';
 import { getOutline as getFrontendOutline } from './services/AnalysisService';
 import { applyFilters } from './services/CodeFilterService';
 
@@ -27,6 +28,7 @@ const showStatsPanel = ref(false);
 const showDetailPanel = ref(false);
 const showSearchPanel = ref(false);
 const showScopePanel = ref(false);
+const showExportPanel = ref(false);
 const statsComponent = ref(null);
 const projectRootPath = ref('..');
 const tabManager = ref(null);
@@ -145,6 +147,15 @@ const toggleScopePanel = () => {
   if (showStatsPanel.value) showStatsPanel.value = false;
   if (showDetailPanel.value) showDetailPanel.value = false;
   if (showSearchPanel.value) showSearchPanel.value = false;
+  if (showExportPanel.value) showExportPanel.value = false;
+};
+
+const toggleExportPanel = () => {
+  showExportPanel.value = !showExportPanel.value;
+  if (showStatsPanel.value) showStatsPanel.value = false;
+  if (showDetailPanel.value) showDetailPanel.value = false;
+  if (showSearchPanel.value) showSearchPanel.value = false;
+  if (showScopePanel.value) showScopePanel.value = false;
 };
 
 const handleSearchSelect = async (result) => {
@@ -188,6 +199,23 @@ const handleScopeClear = () => {
 
 const handlePackageNavigate = async (file) => {
   await handleFileSelect(file);
+};
+
+const getLanguageFromFilename = (filename) => {
+  const ext = filename.split('.').pop().toLowerCase();
+  const map = {
+    'java': 'java',
+    'js': 'javascript',
+    'ts': 'typescript',
+    'tsx': 'typescript',
+    'html': 'html',
+    'css': 'css',
+    'xml': 'xml',
+    'yaml': 'yaml',
+    'yml': 'yaml',
+    'sql': 'sql',
+  };
+  return map[ext] || 'text';
 };
 
 const filteredSymbols = computed(() => {
@@ -335,6 +363,16 @@ onMounted(() => {
           <Focus :size="20" />
         </BButton>
         
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showExportPanel }]" 
+          @click="toggleExportPanel"
+          title="Export Code"
+          :disabled="!selectedFile"
+        >
+          <Download :size="20" />
+        </BButton>
+        
         <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
           <Sun v-if="theme === 'dark'" :size="20" />
           <Moon v-else :size="20" />
@@ -474,6 +512,24 @@ onMounted(() => {
         @isolate="handleScopeIsolate"
         @clear="handleScopeClear"
       />
+    </BOffcanvas>
+
+    <!-- Export Panel -->
+    <BOffcanvas 
+      v-model="showExportPanel" 
+      placement="end"
+      title="Export Code"
+    >
+      <ExportDialog 
+        v-if="selectedFile && fileContent"
+        :code="fileContent"
+        :filename="selectedFile.name"
+        :language="getLanguageFromFilename(selectedFile.name)"
+        @close="showExportPanel = false"
+      />
+      <div v-else class="text-muted text-center p-3">
+        Select a file to export
+      </div>
     </BOffcanvas>
 
     <!-- Hover Tooltip -->
