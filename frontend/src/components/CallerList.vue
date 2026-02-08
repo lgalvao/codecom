@@ -73,7 +73,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import { API_CONFIG, PATH_CONFIG } from '../config/api';
+import { API_CONFIG, truncatePath } from '../config/api';
 
 const props = defineProps({
   rootPath: {
@@ -132,18 +132,7 @@ const navigateToCaller = (caller) => {
 };
 
 const getRelativePath = (fullPath) => {
-  if (!fullPath) return '';
-  
-  // Try to make path relative to rootPath
-  if (fullPath.startsWith(props.rootPath)) {
-    return fullPath.substring(props.rootPath.length + 1);
-  }
-  
-  // Otherwise just show the last few parts
-  const parts = fullPath.split(/[/\\]/);
-  return parts.length > PATH_CONFIG.MAX_DEPTH_TO_SHOW 
-    ? '.../' + parts.slice(-PATH_CONFIG.MAX_DEPTH_TO_SHOW).join('/')
-    : fullPath;
+  return truncatePath(fullPath, props.rootPath);
 };
 
 // Load callers when component mounts or props change

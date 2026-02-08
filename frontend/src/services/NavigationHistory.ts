@@ -3,6 +3,8 @@
  * Implements FR.29: Cross-Reference Navigation
  */
 
+import { NAVIGATION_CONFIG } from '../config/api';
+
 export interface NavigationEntry {
   filePath: string;
   line: number;
@@ -12,7 +14,7 @@ export interface NavigationEntry {
 class NavigationHistory {
   private history: NavigationEntry[] = [];
   private currentIndex: number = -1;
-  private maxHistorySize: number = 50;
+  private maxHistorySize: number = NAVIGATION_CONFIG.MAX_HISTORY_SIZE;
 
   /**
    * Add a new entry to navigation history
