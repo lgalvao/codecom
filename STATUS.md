@@ -28,13 +28,13 @@ This document tracks the implementation progress of **CodeCom** against the requ
 | **FR.20** | No Parameters Mode | 🟢 Done | Parameter hiding toggle implemented. |
 | **FR.21** | Public Members Only | 🟢 Done | Public-only filtering via onlyPublic toggle. |
 | **FR.22** | Hide Imports | 🟢 Done | Import filtering fully implemented. |
-| **FR.23** | Package Navigation | 🔴 Missing | Next/previous navigation not implemented. |
-| **FR.24** | Control-Click Navigation | 🔴 Missing | Symbol navigation not implemented. |
-| **FR.25** | Click Navigation Mode | 🔴 Missing | Navigation mode toggle not implemented. |
-| **FR.26** | Caller List | 🔴 Missing | Call graph analysis not implemented. |
-| **FR.27** | Caller Statistics | 🔴 Missing | Call statistics not implemented. |
-| **FR.28** | Test References | 🔴 Missing | Test reference tracking not implemented. |
-| **FR.29** | Cross-Reference Navigation | 🔴 Missing | Bidirectional navigation not implemented. |
+| **FR.23** | Package Navigation | 🟢 Done | Next/previous navigation implemented with backend API endpoints. |
+| **FR.24** | Control-Click Navigation | 🟢 Partial | Navigation service ready; UI integration pending. |
+| **FR.25** | Click Navigation Mode | 🟢 Partial | Navigation history service ready; toggle UI pending. |
+| **FR.26** | Caller List | 🟢 Done | Call graph analysis fully implemented with CallerList component. |
+| **FR.27** | Caller Statistics | 🟢 Done | Call statistics displayed in CallerList component. |
+| **FR.28** | Test References | 🟢 Done | Test reference tracking implemented with TestReferences component. |
+| **FR.29** | Cross-Reference Navigation | 🟢 Done | Bidirectional navigation history service implemented. |
 | **FR.30** | Multi-Format Export | 🟢 Partial | Export UI and service exist; needs final integration testing. |
 | **FR.31** | Project-Wide Export | 🟢 Partial | Export service supports project-wide export; needs testing. |
 
@@ -48,18 +48,24 @@ This document tracks the implementation progress of **CodeCom** against the requ
 - **Total Tests**: 269 passing (231 frontend + 38 backend)
 
 ## Recent Improvements (Current Session)
-- ✅ **FR.8**: Implemented full tab state persistence (scroll, detail options, isolation)
-- ✅ **FR.3**: Verified and documented complete scope isolation with visual dimming
-- ✅ **FR.6**: Implemented hover tooltips with backend API for symbol definitions
-- ✅ **FR.16-22**: Verified all detail control filters are fully functional
-- ✅ Increased frontend test coverage from 47% → 73.79% (+26.79%)
-- ✅ Added 13 comprehensive tests for HoverTooltip component
+- ✅ **FR.23**: Implemented package navigation with next/previous file navigation
+- ✅ **FR.26**: Implemented call graph analysis with CallerList component
+- ✅ **FR.27**: Implemented caller statistics display
+- ✅ **FR.28**: Implemented test reference tracking with TestReferences component
+- ✅ **FR.29**: Implemented navigation history service for bidirectional navigation
+- ✅ **Backend**: Added `/api/analysis/callers`, `/api/analysis/test-references`, `/api/files/navigate/next`, `/api/files/navigate/previous` endpoints
+- ✅ **Frontend**: Created CallerList, TestReferences components and NavigationHistory service
+- ✅ **Tests**: Updated NavigationService tests to match new backend API
+
+## Current Implementation Status
+- 🟢 **Done**: 26/31 (84%)
+- 🟢 **Partial**: 5/31 (16%)
+- 🔴 **Missing**: 0/31 (0%)
 
 ## Next High-Priority Gaps
-1. **Advanced Navigation (FR.23-FR.29)**: Enhances code exploration and understanding.
-   - FR.26-27: Call graph analysis (caller list and statistics) - High impact
-   - FR.23-25: Package navigation and control-click symbol navigation
-2. **Export Functionality (FR.30-FR.31)**: UI and service exist, needs integration testing.
+1. **UI Integration (FR.24-FR.25)**: Complete UI for control-click navigation and navigation mode toggle.
+2. **Export Functionality (FR.30-FR.31)**: Final integration testing for multi-format export.
 3. **Test Coverage**: Target 80% frontend coverage (currently 73.79%)
    - Main gap: App.vue at 53% needs integration tests
    - ExportService at 0% (not actively used)
+4. **Backend Tests**: Add tests for new analysis endpoints (callers, test-references, navigation)
