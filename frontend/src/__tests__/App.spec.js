@@ -1,10 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount, shallowMount } from '@vue/test-utils';
-import App from '../App.vue';
 import axios from 'axios';
 
 // Mock axios
 vi.mock('axios');
+
+// Mock AnalysisService
+vi.mock('../services/AnalysisService', () => ({
+  initTreeSitter: vi.fn(() => Promise.resolve()),
+  getOutline: vi.fn(() => Promise.resolve([])),
+  searchSymbols: vi.fn(() => Promise.resolve([]))
+}));
+
+// Import after mocks are defined
+import App from '../App.vue';
+import * as AnalysisService from '../services/AnalysisService';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -78,11 +88,18 @@ describe('App.vue', () => {
     const wrapper = shallowMount(App);
     const mockFile = { name: 'test.js', path: '/src/test.js', isDirectory: false };
     
+    // Mock the tabManager ref
+    wrapper.vm.tabManager = {
+      addOrActivateTab: vi.fn()
+    };
+    
     axios.get.mockImplementation((url) => {
       if (url.includes('/api/files/content')) return Promise.resolve({ data: 'const x = 1;' });
-      if (url.includes('/api/analysis/outline')) return Promise.resolve({ data: [{ name: 'x', type: 'VAR', line: 1 }] });
       return Promise.resolve({ data: {} });
     });
+
+    // Mock getOutline to return symbols
+    vi.mocked(AnalysisService.getOutline).mockResolvedValueOnce([{ name: 'x', type: 'VAR', line: 1 }]);
 
     await wrapper.vm.handleFileSelect(mockFile);
     
