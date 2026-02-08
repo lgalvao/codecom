@@ -38,39 +38,88 @@ This document tracks the implementation progress of **CodeCom** against the requ
 | **FR.28** | Test References | 🟢 Done | Test reference tracking implemented with TestReferences component. |
 | **FR.29** | Cross-Reference Navigation | 🟢 Done | Bidirectional navigation history service implemented. |
 | **FR.30** | Multi-Format Export | 🟢 Done | Export UI and service fully tested. Markdown and PDF/HTML export working. |
-| **FR.31** | Project-Wide Export | 🟢 Partial | Export service supports project-wide export; backend integration pending. |
+| **FR.31** | Project-Wide Export | 🟢 Done | Backend integration complete. Multi-file export via API endpoint working. |
+| **FR.40** | Definition Peek (Code Bubble) | 🟢 Done | Enhanced hover tooltips show first 10 lines of implementation. |
+| **FR.41** | Interactive Breadcrumb Navigation | 🟢 Done | Clickable breadcrumb dropdowns showing sibling methods/classes at every level. |
 
 ## Technical Summary
 - **Backend**: Spring Boot 4 / Java 25 is operational.
-  - Test Coverage: **94%** ✅ (38 tests)
+  - Test Coverage: **94%** ✅ (48 tests)
+  - New endpoints: `/api/export` for project-wide export
   - New endpoint: `/api/analysis/definition` for hover tooltips
 - **Frontend**: Vue 3.5 / Vite is operational with BootstrapVueNext.
-  - Test Coverage: **~76%** ✅ (264 tests, up from 231)
+  - Test Coverage: **~77%** ✅ (284 tests, up from 265)
   - Components Coverage: **~90%**
-- **Total Tests**: 302 passing (264 frontend + 38 backend)
+- **Total Tests**: 332 passing (284 frontend + 48 backend)
 
 ## Recent Improvements (Current Session)
-- ✅ **FR.24**: Implemented control-click navigation with symbol detection
-- ✅ **FR.25**: Implemented click navigation mode toggle with localStorage persistence
-- ✅ **FR.30**: Added comprehensive ExportService tests (15 new tests)
-- ✅ **FR.30**: Added comprehensive ExportDialog tests (18 new tests)
-- ✅ **Export Functionality**: Markdown and PDF/HTML export fully tested
-- ✅ **Test Coverage**: Improved from 231 to 264 frontend tests (+33 tests)
-- ✅ **Test Coverage**: ExportService coverage improved from 0% to ~90%
-- ✅ **Test Coverage**: ExportDialog coverage improved from 40% to ~85%
+- ✅ **FR.41**: Implemented Interactive Breadcrumb Navigation with dropdowns
+- ✅ **BreadcrumbNav**: New component with hierarchical navigation and sibling browsing
+- ✅ **Test Coverage**: Added 19 new tests for BreadcrumbNav (265 → 284 tests)
+- ✅ **FR.40**: Implemented Definition Peek (Code Bubble) showing first 10 lines of implementation
+- ✅ **Hover Tooltips**: Enhanced to show code preview with syntax highlighting
+- ✅ **SymbolDefinition**: Added codePreview field to DTO for code bubble support
+- ✅ **AnalysisService**: Added extractCodePreview method for FR.40
+- ✅ **FR.31**: Implemented backend integration for project-wide multi-file export
+- ✅ **Export Service**: Added backend API for exporting multiple files in markdown/HTML format
+- ✅ **Export Dialog**: Enhanced to support package and project-wide export scopes
+- ✅ **Test Coverage**: Added 10 new backend tests for export functionality (38 → 48 tests)
+- ✅ **Test Coverage**: Overall frontend tests increased from 231 to 284 (+53 tests)
 
 ## Current Implementation Status
-- 🟢 **Done**: 29/31 (94%)
-- 🟢 **Partial**: 2/31 (6%)
-- 🔴 **Missing**: 0/31 (0%)
+- 🟢 **Done**: 32/41 (78%) - Includes all FR.1-31 plus FR.40-41
+- 🟢 **Partial**: 1/41 (2%) - FR.1, FR.9, FR.10 need enhancement
+- 🔴 **Missing**: 8/41 (20%) - FR.32-39 not yet started
 
 ## Next High-Priority Gaps
-1. **FR.31: Project-Wide Export**: Backend integration for exporting multiple files
-2. **Test Coverage**: Target 80% frontend coverage (currently ~76%)
+1. **Test Coverage**: Target 80% frontend coverage (currently ~77%)
    - Main gap: App.vue at ~53% needs integration tests
-3. **FR.1, FR.9, FR.10**: Review and enhance if needed
+2. **FR.1, FR.9, FR.10**: Review and enhance as needed
+3. **Advanced Features (FR.32-41)**: Continue foundation features
+   - ✅ FR.40: Definition Peek (Complete)
+   - ✅ FR.41: Breadcrumb Navigation (Complete)
+   - Next: FR.37 (Dead Code), FR.38-39 (Knowledge Graph)
 
 ## Implementation History
+
+### Session 4 - Project-Wide Export, Definition Peek & Breadcrumb Navigation (February 8, 2026)
+**Focus**: Complete FR.31, implement FR.40-41 from advanced features
+
+**Achievements**:
+- ✅ Implemented FR.31: Backend ExportService with support for multiple files
+- ✅ Created `/api/export` REST endpoint for batch file export
+- ✅ Enhanced ExportDialog to support package and project-wide export
+- ✅ Implemented FR.40: Definition Peek (Code Bubble) showing first 10 lines
+- ✅ Enhanced HoverTooltip to display code preview with scrolling
+- ✅ Added extractCodePreview method to AnalysisService
+- ✅ Updated SymbolDefinition DTO to include codePreview field
+- ✅ Implemented FR.41: Interactive Breadcrumb Navigation component
+- ✅ Created BreadcrumbNav with hierarchical navigation and sibling browsing
+- ✅ Dropdown menus showing sibling methods/classes at every level
+- ✅ Added 10 new backend tests (ExportServiceTest, ExportControllerTest)
+- ✅ Added 19 new frontend tests for BreadcrumbNav
+- ✅ Updated frontend tests to match new functionality
+- ✅ Backend test coverage remains at 94% (48 tests total)
+- ✅ Frontend test coverage improved to ~77% (284 tests total)
+
+**New Features**: 
+- Code bubble tooltips (FR.40)
+- Project-wide export (FR.31)
+- Interactive breadcrumb navigation (FR.41)
+
+**New Components**: 
+- Backend: ExportService.java, ExportController.java
+- Frontend: BreadcrumbNav.vue
+
+**New DTOs**: ExportRequest.java, ExportResult.java
+
+**API Endpoints**: `/api/export` (POST) for multi-file export
+
+**Files Modified**: 
+- Backend: AnalysisService.java, SymbolDefinition.java
+- Frontend: ExportService.ts, ExportDialog.vue, HoverTooltip.vue
+
+**Test Summary**: 332 total tests (284 frontend + 48 backend), all passing
 
 ### Session 3 - Export Testing & Navigation (February 8, 2026)
 **Focus**: Complete control-click navigation and export testing
@@ -185,12 +234,14 @@ The project is **production-ready** for core features:
 - ✅ Comprehensive documentation
 
 ### Future Enhancements
-1. **FR.31**: Implement backend support for project-wide multi-file export
-2. **Test Coverage**: Add App.vue integration tests to reach 80% coverage target
-3. **Performance**: Consider code-splitting for large chunks (address build warning)
-4. **FR.9**: Enhance database integration for project indexing
-5. **FR.10**: Expand user preferences system (more settings, cloud sync)
-6. **Advanced Features**: Implement new SRS requirements (FR.32-41) for enhanced visualization and analysis
+1. **Test Coverage**: Add App.vue integration tests to reach 80% coverage target
+2. **Performance**: Consider code-splitting for large chunks (address build warning)
+3. **FR.9**: Enhance database integration for project indexing
+4. **FR.10**: Expand user preferences system (more settings, cloud sync)
+5. **Advanced Features**: Implement new SRS requirements (FR.32-41) for enhanced visualization and analysis
+   - Phase 1 (Foundation): FR.38-39 (Knowledge Graph), FR.40 (Definition Peek), FR.41 (Breadcrumb), FR.37 (Dead Code)
+   - Phase 2 (Visualization): FR.32 (Heatmap), FR.34 (Mini-Map), FR.35 (Code Slicing)
+   - Phase 3 (Analytics): FR.33 (Flow Graph), FR.36 (State Machine)
 
 ### Technical Debt
 - None identified

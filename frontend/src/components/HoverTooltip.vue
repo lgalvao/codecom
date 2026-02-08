@@ -7,6 +7,9 @@ interface TooltipData {
   documentation?: string;
   returnType?: string;
   parameters?: Array<{ name: string; type: string; }>;
+  codePreview?: string;  // FR.40: Code bubble showing first 10 lines
+  filePath?: string;
+  line?: number;
 }
 
 const props = defineProps<{
@@ -54,7 +57,10 @@ const fetchSymbolDefinition = async (line: number): Promise<TooltipData | null> 
         signature: response.data.signature,
         documentation: response.data.documentation,
         returnType: response.data.returnType,
-        parameters: response.data.parameters
+        parameters: response.data.parameters,
+        codePreview: response.data.codePreview,
+        filePath: response.data.filePath,
+        line: response.data.line,
       };
     }
   } catch (error) {
@@ -165,6 +171,14 @@ defineExpose({
       <div v-if="tooltipContent.documentation" class="tooltip-section documentation">
         <div class="doc-content">{{ tooltipContent.documentation }}</div>
       </div>
+      
+      <div v-if="tooltipContent.codePreview" class="tooltip-section code-preview">
+        <div class="label">Preview:</div>
+        <pre class="code-bubble"><code>{{ tooltipContent.codePreview }}</code></pre>
+        <div class="preview-info text-muted">
+          Showing first 10 lines • Click to view full definition
+        </div>
+      </div>
     </div>
   </Teleport>
 </template>
@@ -178,7 +192,9 @@ defineExpose({
   border-radius: 6px;
   padding: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-width: 400px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
   font-size: 0.875rem;
   pointer-events: none;
 }
@@ -243,5 +259,37 @@ code {
   padding: 2px 4px;
   border-radius: 3px;
   font-family: 'Fira Code', 'Cascadia Code', monospace;
+}
+
+.code-preview {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.code-bubble {
+  background: rgba(128, 128, 128, 0.05);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 4px;
+  padding: 8px;
+  margin: 8px 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.code-bubble code {
+  background: transparent;
+  padding: 0;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  white-space: pre;
+}
+
+.preview-info {
+  font-size: 0.7rem;
+  font-style: italic;
+  margin-top: 4px;
 }
 </style>

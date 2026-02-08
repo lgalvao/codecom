@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Download, FileText, FileCode } from 'lucide-vue-next';
-import { exportFile, type ExportFormat, type ExportScope, type DetailLevel } from '../services/ExportService';
+import { exportFile, exportFiles, type ExportFormat, type ExportScope, type DetailLevel } from '../services/ExportService';
 
 const props = defineProps<{
   code: string;
   filename: string;
   language: string;
+  filePath?: string;
+  allFiles?: Array<{ path: string; isDirectory: boolean }>;
 }>();
 
 const emit = defineEmits<{
@@ -18,17 +20,76 @@ const scope = ref<ExportScope>('current');
 const detailLevel = ref<DetailLevel>('full');
 const includeLineNumbers = ref(true);
 const title = ref('');
+const isExporting = ref(false);
+const exportError = ref<string | null>(null);
 
-const handleExport = () => {
-  exportFile(props.code, props.filename, props.language, {
-    format: format.value,
-    scope: scope.value,
-    detailLevel: detailLevel.value,
-    includeLineNumbers: includeLineNumbers.value,
-    title: title.value || undefined,
-  });
+// Check if we have file path for package/project export
+const canExportPackage = computed(() => !!props.filePath);
+const canExportProject = computed(() => !!props.allFiles && props.allFiles.length > 0);
+
+const handleExport = async () => {
+  isExporting.value = true;
+  exportError.value = null;
   
-  emit('close');
+  try {
+    if (scope.value === 'current') {
+      // Export current file (client-side)
+      exportFile(props.code, props.filename, props.language, {
+        format: format.value,
+        scope: scope.value,
+        detailLevel: detailLevel.value,
+        includeLineNumbers: includeLineNumbers.value,
+        title: title.value || undefined,
+      });
+    } else if (scope.value === 'package' && props.filePath) {
+      // Export package (all files in same directory) via backend
+      const packageFiles = getPackageFiles();
+      await exportFiles(packageFiles, {
+        format: format.value,
+        scope: scope.value,
+        detailLevel: detailLevel.value,
+        includeLineNumbers: includeLineNumbers.value,
+        title: title.value || `Package Export - ${getPackageName()}`,
+      });
+    } else if (scope.value === 'project' && props.allFiles) {
+      // Export entire project via backend
+      const projectFiles = props.allFiles
+        .filter(f => !f.isDirectory)
+        .map(f => f.path);
+      
+      await exportFiles(projectFiles, {
+        format: format.value,
+        scope: scope.value,
+        detailLevel: detailLevel.value,
+        includeLineNumbers: includeLineNumbers.value,
+        title: title.value || 'Project Export',
+      });
+    }
+    
+    emit('close');
+  } catch (error) {
+    exportError.value = error instanceof Error ? error.message : 'Export failed';
+    console.error('Export error:', error);
+  } finally {
+    isExporting.value = false;
+  }
+};
+
+// Get all files in the same package/directory
+const getPackageFiles = (): string[] => {
+  if (!props.filePath || !props.allFiles) return [props.filePath];
+  
+  const currentDir = props.filePath.substring(0, props.filePath.lastIndexOf('/'));
+  return props.allFiles
+    .filter(f => !f.isDirectory && f.path.startsWith(currentDir + '/'))
+    .map(f => f.path);
+};
+
+// Get package name from file path
+const getPackageName = (): string => {
+  if (!props.filePath) return '';
+  const parts = props.filePath.split('/');
+  return parts[parts.length - 2] || 'package';
 };
 </script>
 
@@ -71,9 +132,18 @@ const handleExport = () => {
       <label class="form-label fw-semibold small">Export Scope</label>
       <select class="form-select" v-model="scope">
         <option value="current">Current File</option>
-        <option value="package" disabled>Current Package (Not implemented)</option>
-        <option value="project" disabled>Entire Project (Not implemented)</option>
+        <option value="package" :disabled="!canExportPackage">
+          Current Package {{ canExportPackage ? '' : '(Not available)' }}
+        </option>
+        <option value="project" :disabled="!canExportProject">
+          Entire Project {{ canExportProject ? '' : '(Not available)' }}
+        </option>
       </select>
+      <small class="text-muted">
+        <span v-if="scope === 'current'">Export only the current file</span>
+        <span v-else-if="scope === 'package'">Export all files in the same directory</span>
+        <span v-else>Export all files in the project</span>
+      </small>
     </div>
 
     <!-- Detail Level -->
@@ -116,17 +186,30 @@ const handleExport = () => {
 
     <!-- Action Buttons -->
     <div class="d-flex gap-2">
-      <button class="btn btn-primary flex-grow-1" @click="handleExport">
+      <button 
+        class="btn btn-primary flex-grow-1" 
+        @click="handleExport"
+        :disabled="isExporting"
+      >
         <Download :size="16" class="me-1" />
-        Export
+        {{ isExporting ? 'Exporting...' : 'Export' }}
       </button>
-      <button class="btn btn-secondary" @click="$emit('close')">
+      <button 
+        class="btn btn-secondary" 
+        @click="$emit('close')"
+        :disabled="isExporting"
+      >
         Cancel
       </button>
     </div>
 
+    <!-- Error Alert -->
+    <div v-if="exportError" class="alert alert-danger mt-3 small mb-0">
+      <strong>Error:</strong> {{ exportError }}
+    </div>
+
     <!-- Info Box -->
-    <div class="alert alert-info mt-3 small mb-0">
+    <div v-else class="alert alert-info mt-3 small mb-0">
       <strong>Note:</strong> 
       <span v-if="format === 'markdown'">
         The exported Markdown file can be opened in any text editor or Markdown viewer.

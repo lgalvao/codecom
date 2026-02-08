@@ -271,3 +271,57 @@ export function exportFile(
   
   downloadExport(content, exportFilename, mimeType);
 }
+
+/**
+ * Export multiple files using backend API
+ */
+export async function exportFiles(
+  filePaths: string[],
+  options: ExportOptions
+): Promise<void> {
+  try {
+    const response = await fetch('http://localhost:8080/api/export', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        filePaths,
+        format: options.format,
+        detailLevel: options.detailLevel,
+        includeLineNumbers: options.includeLineNumbers ?? true,
+        title: options.title,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Export failed: ${response.statusText}`);
+    }
+
+    // Get metadata from headers
+    const totalFiles = response.headers.get('X-Total-Files');
+    const totalLines = response.headers.get('X-Total-Lines');
+
+    // Extract filename from Content-Disposition header
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'export';
+    if (contentDisposition) {
+      const matches = /filename="(.+)"/.exec(contentDisposition);
+      if (matches && matches[1]) {
+        filename = matches[1];
+      }
+    }
+
+    // Get the content
+    const content = await response.text();
+    const mimeType = response.headers.get('Content-Type') || 'text/plain';
+
+    // Trigger download
+    downloadExport(content, filename, mimeType);
+
+    console.log(`Exported ${totalFiles} files with ${totalLines} lines`);
+  } catch (error) {
+    console.error('Error exporting files:', error);
+    throw error;
+  }
+}
