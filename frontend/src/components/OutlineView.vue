@@ -8,7 +8,7 @@ const props = defineProps({
   }
 });
 
-const emits = defineEmits(['select']);
+const emits = defineEmits(['select', 'show-callers']);
 
 const getIcon = (type) => {
   switch (type) {
@@ -40,6 +40,8 @@ const getIconClass = (type) => {
         :key="symbol.name + symbol.line"
         class="list-group-item list-group-item-action border-0 py-1 px-3 d-flex align-items-center cursor-pointer small"
         @click="emits('select', symbol)"
+        @contextmenu.prevent="symbol.type === 'METHOD' && emits('show-callers', symbol)"
+        :title="symbol.type === 'METHOD' ? 'Right-click to show callers' : ''"
       >
         <component :is="getIcon(symbol.type)" :size="14" class="me-2" :class="getIconClass(symbol.type)" />
         <span class="truncate text-truncate">{{ symbol.name }}</span>

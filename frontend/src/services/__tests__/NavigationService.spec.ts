@@ -147,42 +147,25 @@ describe('NavigationService', () => {
 
   describe('navigateToNextFile', () => {
     it('should return next file in the same directory', async () => {
-      const mockTreeResponse = {
-        data: {
-          name: 'services',
-          type: 'DIRECTORY',
-          path: '/src/services',
-          children: [
-            { name: 'AService.java', type: 'FILE', path: '/src/services/AService.java' },
-            { name: 'BService.java', type: 'FILE', path: '/src/services/BService.java' },
-            { name: 'CService.java', type: 'FILE', path: '/src/services/CService.java' }
-          ]
-        }
-      };
-
-      vi.mocked(axios.get).mockResolvedValue(mockTreeResponse);
+      // Mock the backend API response
+      vi.mocked(axios.get).mockResolvedValue({
+        data: '/src/services/BService.java'
+      });
 
       const nextFile = await navigateToNextFile('/src/services/AService.java');
 
       expect(nextFile).not.toBeNull();
       expect(nextFile.name).toBe('BService.java');
       expect(nextFile.path).toBe('/src/services/BService.java');
+      expect(axios.get).toHaveBeenCalledWith(
+        'http://localhost:8080/api/files/navigate/next',
+        { params: { path: '/src/services/AService.java' } }
+      );
     });
 
     it('should return null when at last file', async () => {
-      const mockTreeResponse = {
-        data: {
-          name: 'services',
-          type: 'DIRECTORY',
-          path: '/src/services',
-          children: [
-            { name: 'AService.java', type: 'FILE', path: '/src/services/AService.java' },
-            { name: 'BService.java', type: 'FILE', path: '/src/services/BService.java' }
-          ]
-        }
-      };
-
-      vi.mocked(axios.get).mockResolvedValue(mockTreeResponse);
+      // Mock the backend API response for last file
+      vi.mocked(axios.get).mockResolvedValue({ data: null });
 
       const nextFile = await navigateToNextFile('/src/services/BService.java');
 
@@ -190,18 +173,8 @@ describe('NavigationService', () => {
     });
 
     it('should return null when current file not found', async () => {
-      const mockTreeResponse = {
-        data: {
-          name: 'services',
-          type: 'DIRECTORY',
-          path: '/src/services',
-          children: [
-            { name: 'AService.java', type: 'FILE', path: '/src/services/AService.java' }
-          ]
-        }
-      };
-
-      vi.mocked(axios.get).mockResolvedValue(mockTreeResponse);
+      // Mock error response
+      vi.mocked(axios.get).mockRejectedValue(new Error('File not found'));
 
       const nextFile = await navigateToNextFile('/src/services/NonExistent.java');
 
@@ -209,20 +182,10 @@ describe('NavigationService', () => {
     });
 
     it('should return null when directory has single file', async () => {
-      const mockTreeResponse = {
-        data: {
-          name: 'services',
-          type: 'DIRECTORY',
-          path: '/src/services',
-          children: [
-            { name: 'OnlyService.java', type: 'FILE', path: '/src/services/OnlyService.java' }
-          ]
-        }
-      };
+      // Mock the backend API response for single file
+      vi.mocked(axios.get).mockResolvedValue({ data: null });
 
-      vi.mocked(axios.get).mockResolvedValue(mockTreeResponse);
-
-      const nextFile = await navigateToNextFile('/src/services/OnlyService.java');
+      const nextFile = await navigateToNextFile('/src/services/OnlyFile.java');
 
       expect(nextFile).toBeNull();
     });
@@ -230,42 +193,25 @@ describe('NavigationService', () => {
 
   describe('navigateToPreviousFile', () => {
     it('should return previous file in the same directory', async () => {
-      const mockTreeResponse = {
-        data: {
-          name: 'services',
-          type: 'DIRECTORY',
-          path: '/src/services',
-          children: [
-            { name: 'AService.java', type: 'FILE', path: '/src/services/AService.java' },
-            { name: 'BService.java', type: 'FILE', path: '/src/services/BService.java' },
-            { name: 'CService.java', type: 'FILE', path: '/src/services/CService.java' }
-          ]
-        }
-      };
-
-      vi.mocked(axios.get).mockResolvedValue(mockTreeResponse);
+      // Mock the backend API response
+      vi.mocked(axios.get).mockResolvedValue({
+        data: '/src/services/BService.java'
+      });
 
       const prevFile = await navigateToPreviousFile('/src/services/CService.java');
 
       expect(prevFile).not.toBeNull();
       expect(prevFile.name).toBe('BService.java');
       expect(prevFile.path).toBe('/src/services/BService.java');
+      expect(axios.get).toHaveBeenCalledWith(
+        'http://localhost:8080/api/files/navigate/previous',
+        { params: { path: '/src/services/CService.java' } }
+      );
     });
 
     it('should return null when at first file', async () => {
-      const mockTreeResponse = {
-        data: {
-          name: 'services',
-          type: 'DIRECTORY',
-          path: '/src/services',
-          children: [
-            { name: 'AService.java', type: 'FILE', path: '/src/services/AService.java' },
-            { name: 'BService.java', type: 'FILE', path: '/src/services/BService.java' }
-          ]
-        }
-      };
-
-      vi.mocked(axios.get).mockResolvedValue(mockTreeResponse);
+      // Mock the backend API response for first file
+      vi.mocked(axios.get).mockResolvedValue({ data: null });
 
       const prevFile = await navigateToPreviousFile('/src/services/AService.java');
 
@@ -273,18 +219,8 @@ describe('NavigationService', () => {
     });
 
     it('should return null when current file not found', async () => {
-      const mockTreeResponse = {
-        data: {
-          name: 'services',
-          type: 'DIRECTORY',
-          path: '/src/services',
-          children: [
-            { name: 'AService.java', type: 'FILE', path: '/src/services/AService.java' }
-          ]
-        }
-      };
-
-      vi.mocked(axios.get).mockResolvedValue(mockTreeResponse);
+      // Mock error response
+      vi.mocked(axios.get).mockRejectedValue(new Error('File not found'));
 
       const prevFile = await navigateToPreviousFile('/src/services/NonExistent.java');
 
