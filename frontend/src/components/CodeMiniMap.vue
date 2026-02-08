@@ -35,13 +35,15 @@ const updateContainerHeight = () => {
 const detectErrorHandlingLines = (content) => {
   const errorLines = new Set();
   const lines = content.split('\n');
-  const errorKeywords = ['try', 'catch', 'throw', 'throws', 'Exception', 'Error', 'finally'];
+  // Use word boundary regex for better matching
+  // Case-sensitive to reduce false positives (e.g., 'error' in variable names)
+  const errorKeywords = ['try', 'catch', 'throw', 'throws', 'Exception', 'finally'];
   
   lines.forEach((line, index) => {
     const trimmedLine = line.trim();
-    // Check if line contains error handling keywords
+    // Check if line contains error handling keywords as whole words
     if (errorKeywords.some(keyword => {
-      const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+      const regex = new RegExp(`\\b${keyword}\\b`);
       return regex.test(trimmedLine);
     })) {
       errorLines.add(index + 1); // Line numbers are 1-based
@@ -60,6 +62,10 @@ const blocks = computed(() => {
   const errorLines = detectErrorHandlingLines(props.fileContent);
   const processedBlocks = [];
   
+  // Default fallback color and label (moved outside loop for efficiency)
+  const FALLBACK_COLOR = '#6b7280'; // gray
+  const FALLBACK_LABEL = 'Other';
+  
   props.symbols.forEach((symbol) => {
     const startLine = symbol.line || 1;
     const endLine = symbol.endLine || startLine + 1;
@@ -73,8 +79,8 @@ const blocks = computed(() => {
     // 1. Red if contains error handling (highest priority)
     // 2. Green if public
     // 3. Blue if private/protected
-    let color = '#6b7280'; // gray fallback
-    let label = 'Other';
+    let color = FALLBACK_COLOR;
+    let label = FALLBACK_LABEL;
     
     // Check if this symbol overlaps with error handling lines
     const hasErrorHandling = Array.from({ length: lineSpan }, (_, i) => startLine + i)
