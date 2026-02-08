@@ -94,6 +94,20 @@ const loadFileContent = async (node) => {
 };
 
 const handleFileSelect = async (node) => {
+  // Save current tab state before switching
+  if (selectedFile.value && tabManager.value) {
+    const currentTabId = tabManager.value.tabs.find(t => t.path === selectedFile.value.path)?.id;
+    if (currentTabId) {
+      const scrollContainer = document.querySelector('.shiki-container pre');
+      const scrollPosition = scrollContainer?.scrollTop || 0;
+      tabManager.value.updateTabState(currentTabId, {
+        scrollPosition,
+        detailOptions: { ...detailOptions.value },
+        isolatedSymbol: isolatedSymbol.value
+      });
+    }
+  }
+  
   selectedFile.value = node;
   // Add to tab manager
   if (tabManager.value) {
@@ -103,9 +117,41 @@ const handleFileSelect = async (node) => {
 };
 
 const handleTabSelect = async (tab) => {
+  // Save current tab state before switching
+  if (selectedFile.value && tabManager.value) {
+    const currentTabId = tabManager.value.tabs.find(t => t.path === selectedFile.value.path)?.id;
+    if (currentTabId) {
+      const scrollContainer = document.querySelector('.shiki-container pre');
+      const scrollPosition = scrollContainer?.scrollTop || 0;
+      tabManager.value.updateTabState(currentTabId, {
+        scrollPosition,
+        detailOptions: { ...detailOptions.value },
+        isolatedSymbol: isolatedSymbol.value
+      });
+    }
+  }
+  
   // Switch to selected tab
   selectedFile.value = { name: tab.name, path: tab.path };
   await loadFileContent(selectedFile.value);
+  
+  // Restore tab state
+  if (tab.detailOptions) {
+    detailOptions.value = { ...tab.detailOptions };
+  }
+  if (tab.isolatedSymbol !== undefined) {
+    isolatedSymbol.value = tab.isolatedSymbol;
+  }
+  
+  // Restore scroll position after content is loaded and rendered
+  setTimeout(() => {
+    if (tab.scrollPosition) {
+      const scrollContainer = document.querySelector('.shiki-container pre');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = tab.scrollPosition;
+      }
+    }
+  }, 100);
 };
 
 const handleTabClose = (tabId) => {
@@ -302,6 +348,25 @@ onMounted(() => {
       toggleSearchPanel();
     }
   });
+  
+  // Auto-save scroll position while scrolling
+  let scrollTimeout;
+  document.addEventListener('scroll', (e) => {
+    if (e.target.classList?.contains('shiki-container') || 
+        e.target.tagName === 'PRE') {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        if (selectedFile.value && tabManager.value) {
+          const currentTabId = tabManager.value.tabs.find(t => t.path === selectedFile.value.path)?.id;
+          if (currentTabId) {
+            const scrollContainer = document.querySelector('.shiki-container pre');
+            const scrollPosition = scrollContainer?.scrollTop || 0;
+            tabManager.value.updateTabState(currentTabId, { scrollPosition });
+          }
+        }
+      }, 200);
+    }
+  }, true);
 });
 </script>
 
@@ -532,6 +597,7 @@ onMounted(() => {
     <!-- Hover Tooltip -->
     <HoverTooltip 
       :enabled="hoverTooltipEnabled"
+      :current-file="selectedFile"
       @hover="handleHover"
     />
   </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import axios from 'axios';
 
 interface TooltipData {
   signature: string;
@@ -10,6 +11,7 @@ interface TooltipData {
 
 const props = defineProps<{
   enabled: boolean;
+  currentFile?: { name: string; path: string } | null;
 }>();
 
 const emit = defineEmits<{
@@ -35,18 +37,43 @@ const hideTooltip = () => {
   hoveredElement.value = null;
 };
 
+const fetchSymbolDefinition = async (line: number): Promise<TooltipData | null> => {
+  if (!props.currentFile) return null;
+
+  try {
+    const response = await axios.get('http://localhost:8080/api/analysis/definition', {
+      params: {
+        path: props.currentFile.path,
+        line: line,
+        column: 0
+      }
+    });
+
+    if (response.data) {
+      return {
+        signature: response.data.signature,
+        documentation: response.data.documentation,
+        returnType: response.data.returnType,
+        parameters: response.data.parameters
+      };
+    }
+  } catch (error) {
+    // Symbol not found or error - silently fail
+    console.debug('Symbol definition not found:', error);
+  }
+
+  return null;
+};
+
 const handleMouseMove = (event: MouseEvent) => {
-  if (!props.enabled) return;
+  if (!props.enabled || !props.currentFile) return;
   
   const target = event.target as HTMLElement;
   
-  // Check if hovering over a code symbol (simplified detection)
-  const isCodeSymbol = 
-    target.classList.contains('token') || 
-    target.classList.contains('identifier') ||
-    target.closest('.line');
+  // Check if hovering over a code line
+  const lineElement = target.closest('.line');
   
-  if (!isCodeSymbol) {
+  if (!lineElement) {
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
       hoverTimeout = null;
@@ -60,20 +87,22 @@ const handleMouseMove = (event: MouseEvent) => {
     clearTimeout(hoverTimeout);
   }
   
-  hoverTimeout = window.setTimeout(() => {
-    // In a real implementation, this would query the backend for symbol info
-    // For now, we'll show a placeholder
-    const symbolText = target.textContent || '';
+  hoverTimeout = window.setTimeout(async () => {
+    // Get line number from the line element
+    const lines = document.querySelectorAll('.line');
+    const lineIndex = Array.from(lines).indexOf(lineElement as Element);
     
-    if (symbolText.trim().length > 0 && /^[a-zA-Z_]\w*$/.test(symbolText.trim())) {
-      hoveredElement.value = target;
-      emit('hover', target, { x: event.clientX, y: event.clientY });
+    if (lineIndex >= 0) {
+      const lineNumber = lineIndex + 1;
+      hoveredElement.value = lineElement as HTMLElement;
+      emit('hover', lineElement as HTMLElement, { x: event.clientX, y: event.clientY });
       
-      // Placeholder tooltip - in real implementation, fetch from backend
-      showTooltip({
-        signature: `${symbolText}()`,
-        documentation: 'Hover documentation will be shown here',
-      }, event.clientX, event.clientY);
+      // Fetch symbol definition from backend
+      const definition = await fetchSymbolDefinition(lineNumber);
+      
+      if (definition) {
+        showTooltip(definition, event.clientX, event.clientY);
+      }
     }
   }, 500); // 500ms delay before showing tooltip
 };

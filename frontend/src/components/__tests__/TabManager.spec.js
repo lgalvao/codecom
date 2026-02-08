@@ -294,6 +294,68 @@ describe('TabManager.vue', () => {
         wrapper.vm.updateTabState('non-existent', { scrollPosition: 100 });
       }).not.toThrow();
     });
+
+    it('persists tab state with scroll position and detail options', async () => {
+      const wrapper = mount(TabManager);
+      await wrapper.setProps({ currentFile: createFile('test.js', '/src/test.js') });
+
+      const tabId = wrapper.vm.tabs[0].id;
+      const state = {
+        scrollPosition: 500,
+        detailOptions: {
+          showComments: false,
+          showImports: true,
+          showPrivateMembers: false
+        },
+        isolatedSymbol: { name: 'myFunction', line: 42 }
+      };
+      
+      wrapper.vm.updateTabState(tabId, state);
+      await wrapper.vm.$nextTick();
+
+      // Verify state is updated
+      expect(wrapper.vm.tabs[0].scrollPosition).toBe(500);
+      expect(wrapper.vm.tabs[0].detailOptions).toEqual(state.detailOptions);
+      expect(wrapper.vm.tabs[0].isolatedSymbol).toEqual(state.isolatedSymbol);
+
+      // Verify state is saved to localStorage
+      const calls = localStorageMock.setItem.mock.calls;
+      const lastCall = calls[calls.length - 1];
+      const savedData = JSON.parse(lastCall[1]);
+      expect(savedData.tabs[0].scrollPosition).toBe(500);
+      expect(savedData.tabs[0].detailOptions).toEqual(state.detailOptions);
+      expect(savedData.tabs[0].isolatedSymbol).toEqual(state.isolatedSymbol);
+    });
+
+    it('restores tab state from localStorage including scroll and detail options', () => {
+      const savedTabs = {
+        tabs: [
+          {
+            id: 'tab-1',
+            name: 'file1.js',
+            path: '/src/file1.js',
+            scrollPosition: 350,
+            detailOptions: {
+              showComments: true,
+              showImports: false
+            },
+            isolatedSymbol: null
+          }
+        ],
+        activeTabId: 'tab-1'
+      };
+
+      localStorageMock.getItem.mockReturnValue(JSON.stringify(savedTabs));
+
+      const wrapper = mount(TabManager);
+
+      expect(wrapper.vm.tabs[0].scrollPosition).toBe(350);
+      expect(wrapper.vm.tabs[0].detailOptions).toEqual({
+        showComments: true,
+        showImports: false
+      });
+      expect(wrapper.vm.tabs[0].isolatedSymbol).toBeNull();
+    });
   });
 
   describe('LocalStorage Persistence', () => {

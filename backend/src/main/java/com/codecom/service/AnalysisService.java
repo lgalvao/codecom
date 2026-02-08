@@ -1,13 +1,17 @@
 package com.codecom.service;
 
+import com.codecom.dto.SymbolDefinition;
 import com.codecom.dto.SymbolInfo;
 import com.codecom.dto.SymbolSearchResult;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @Service
@@ -141,5 +146,123 @@ public class AnalysisService {
         });
         
         return results;
+    }
+
+    /**
+     * Get detailed symbol definition at a specific location
+     * @param filePath The file path
+     * @param line The line number
+     * @param column The column number
+     * @return Symbol definition with signature, parameters, and documentation
+     */
+    public Optional<SymbolDefinition> getSymbolDefinition(String filePath, int line, int column) throws IOException {
+        String content = Files.readString(Path.of(filePath));
+        String extension = getExtension(filePath);
+
+        if (!"java".equals(extension)) {
+            return Optional.empty();
+        }
+
+        ParseResult<CompilationUnit> result = javaParser.parse(content);
+        if (!result.isSuccessful() || result.getResult().isEmpty()) {
+            return Optional.empty();
+        }
+
+        CompilationUnit cu = result.getResult().get();
+        
+        // Find method at the specified location
+        Optional<MethodDeclaration> method = cu.findAll(MethodDeclaration.class).stream()
+            .filter(m -> m.getRange().isPresent() && 
+                        m.getRange().get().begin.line == line)
+            .findFirst();
+
+        if (method.isPresent()) {
+            return Optional.of(buildMethodDefinition(method.get(), filePath));
+        }
+
+        // Find class at the specified location
+        Optional<ClassOrInterfaceDeclaration> classDecl = cu.findAll(ClassOrInterfaceDeclaration.class).stream()
+            .filter(c -> c.getRange().isPresent() && 
+                        c.getRange().get().begin.line == line)
+            .findFirst();
+
+        if (classDecl.isPresent()) {
+            return Optional.of(buildClassDefinition(classDecl.get(), filePath));
+        }
+
+        return Optional.empty();
+    }
+
+    private SymbolDefinition buildMethodDefinition(MethodDeclaration method, String filePath) {
+        String signature = method.getDeclarationAsString(false, false, false);
+        String returnType = method.getTypeAsString();
+        
+        List<SymbolDefinition.Parameter> parameters = method.getParameters().stream()
+            .map(p -> new SymbolDefinition.Parameter(p.getNameAsString(), p.getTypeAsString()))
+            .toList();
+
+        String documentation = extractJavadoc(method);
+
+        int line = method.getRange().map(r -> r.begin.line).orElse(0);
+
+        return new SymbolDefinition(
+            method.getNameAsString(),
+            signature,
+            "METHOD",
+            returnType,
+            parameters,
+            documentation,
+            filePath,
+            line
+        );
+    }
+
+    private SymbolDefinition buildClassDefinition(ClassOrInterfaceDeclaration classDecl, String filePath) {
+        String type = classDecl.isInterface() ? "INTERFACE" : "CLASS";
+        
+        // Build signature manually
+        StringBuilder signature = new StringBuilder();
+        if (classDecl.isPublic()) signature.append("public ");
+        if (classDecl.isPrivate()) signature.append("private ");
+        if (classDecl.isProtected()) signature.append("protected ");
+        if (classDecl.isAbstract() && !classDecl.isInterface()) signature.append("abstract ");
+        if (classDecl.isFinal()) signature.append("final ");
+        
+        signature.append(classDecl.isInterface() ? "interface " : "class ");
+        signature.append(classDecl.getNameAsString());
+        
+        String documentation = extractJavadoc(classDecl);
+
+        int line = classDecl.getRange().map(r -> r.begin.line).orElse(0);
+
+        return new SymbolDefinition(
+            classDecl.getNameAsString(),
+            signature.toString(),
+            type,
+            null,
+            List.of(),
+            documentation,
+            filePath,
+            line
+        );
+    }
+
+    private String extractJavadoc(Node node) {
+        Optional<JavadocComment> javadoc = node.getComment()
+            .filter(c -> c instanceof JavadocComment)
+            .map(c -> (JavadocComment) c);
+
+        if (javadoc.isPresent()) {
+            String content = javadoc.get().getContent();
+            // Basic cleanup: remove leading asterisks and extra whitespace
+            return content.lines()
+                .map(line -> line.trim().replaceFirst("^\\*\\s?", ""))
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .reduce((a, b) -> a + " " + b)
+                .orElse("");
+        }
+
+        return null;
     }
 }
