@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2 } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import OutlineView from './components/OutlineView.vue';
@@ -376,10 +376,57 @@ const toggleClickNavigationMode = () => {
   localStorage.setItem('clickNavigationMode', clickNavigationMode.value.toString());
 };
 
+/**
+ * Handle symbol navigation from CodeHighlighter
+ * Implements FR.24 (Control-Click) and FR.25 (Click Navigation Mode)
+ */
+const handleNavigateToSymbol = async (symbolName) => {
+  try {
+    // Import the navigation service
+    const { findSymbolDefinition } = await import('./services/NavigationService');
+    
+    // Find the symbol definition
+    const definition = await findSymbolDefinition(symbolName, projectRootPath.value);
+    
+    if (definition && definition.filePath) {
+      // Navigate to the file
+      const fileName = definition.filePath.split('/').pop();
+      const node = { name: fileName, path: definition.filePath };
+      await handleFileSelect(node);
+      
+      // Scroll to the line after a short delay
+      setTimeout(() => {
+        const editor = document.querySelector('.shiki-container pre');
+        if (editor) {
+          const lines = editor.querySelectorAll('.line');
+          if (lines[definition.line - 1]) {
+            lines[definition.line - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            lines[definition.line - 1].classList.add('highlight-line');
+            setTimeout(() => {
+              lines[definition.line - 1].classList.remove('highlight-line');
+            }, 1000);
+          }
+        }
+      }, 300);
+    } else {
+      console.warn('Symbol definition not found:', symbolName);
+    }
+  } catch (error) {
+    console.error('Error navigating to symbol:', error);
+  }
+};
+
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme') || 'dark';
   theme.value = savedTheme;
   document.documentElement.dataset.bsTheme = theme.value;
+  
+  // Load click navigation mode preference
+  const savedClickNav = localStorage.getItem('clickNavigationMode');
+  if (savedClickNav !== null) {
+    clickNavigationMode.value = savedClickNav === 'true';
+  }
+  
   fetchTree();
   
   // Add keyboard shortcut for symbol search (Ctrl+Shift+F or Cmd+Shift+F)
@@ -476,6 +523,15 @@ onMounted(() => {
           <Download :size="20" />
         </BButton>
         
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': clickNavigationMode }]" 
+          @click="toggleClickNavigationMode"
+          title="Click Navigation Mode (when enabled, click on symbols to navigate)"
+        >
+          <MousePointer2 :size="20" />
+        </BButton>
+        
         <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
           <Sun v-if="theme === 'dark'" :size="20" />
           <Moon v-else :size="20" />
@@ -542,6 +598,8 @@ onMounted(() => {
                  :filename="selectedFile.name" 
                  :theme="theme" 
                  :hidden-lines="hiddenLines"
+                 :click-navigation-mode="clickNavigationMode"
+                 @navigate-to-symbol="handleNavigateToSymbol"
                />
             </div>
             <!-- Outline Sidebar -->
