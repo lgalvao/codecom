@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost, Layers, Network } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost, Layers, Network, GitBranch } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import CodeMiniMap from './components/CodeMiniMap.vue';
@@ -18,6 +18,7 @@ import ExportDialog from './components/ExportDialog.vue';
 import CallerList from './components/CallerList.vue';
 import FeatureSliceManager from './components/FeatureSliceManager.vue';
 import FlowGraphView from './components/FlowGraphView.vue';
+import StateMachineView from './components/StateMachineView.vue';
 import { getOutline as getFrontendOutline, detectDeadCode } from './services/AnalysisService';
 import { applyFilters } from './services/CodeFilterService';
 
@@ -46,6 +47,7 @@ const deadCodeInfo = ref([]);
 const showDeadCode = ref(false);
 const activeSliceFiles = ref([]);
 const showFlowGraph = ref(false);
+const showStateMachines = ref(false);
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -429,6 +431,10 @@ const toggleFlowGraph = () => {
   showFlowGraph.value = !showFlowGraph.value;
 };
 
+const toggleStateMachines = () => {
+  showStateMachines.value = !showStateMachines.value;
+};
+
 // FR.37: Toggle dead code visualization
 const toggleDeadCodeVisualization = async () => {
   showDeadCode.value = !showDeadCode.value;
@@ -629,6 +635,16 @@ onMounted(() => {
           title="Architecture Flow Graph (FR.33) - Interactive visualization of request lifecycle"
         >
           <Network :size="20" />
+        </BButton>
+        
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-success': showStateMachines }]" 
+          @click="toggleStateMachines"
+          title="State Machine Diagrams (FR.36) - Visualize state transitions from enums"
+          :disabled="!selectedFile"
+        >
+          <GitBranch :size="20" />
         </BButton>
         
         <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
@@ -843,6 +859,18 @@ onMounted(() => {
       v-if="showFlowGraph"
       @close="showFlowGraph = false"
     />
+    
+    <!-- State Machine View -->
+    <BOffcanvas
+      v-model="showStateMachines"
+      placement="end"
+      title="State Machine Diagrams (FR.36)"
+      :width="800"
+    >
+      <StateMachineView 
+        :file-path="selectedFile?.path"
+      />
+    </BOffcanvas>
   </div>
 </template>
 
