@@ -2,11 +2,13 @@ package com.codecom.controller;
 
 import com.codecom.dto.CallerStatistics;
 import com.codecom.dto.DeadCodeInfo;
+import com.codecom.dto.FileComplexity;
 import com.codecom.dto.SymbolDefinition;
 import com.codecom.dto.SymbolInfo;
 import com.codecom.dto.SymbolSearchResult;
 import com.codecom.dto.TestReference;
 import com.codecom.service.AnalysisService;
+import com.codecom.service.ComplexityService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,9 +22,11 @@ import java.util.Optional;
 public class AnalysisController {
 
     private final AnalysisService analysisService;
+    private final ComplexityService complexityService;
 
-    public AnalysisController(AnalysisService analysisService) {
+    public AnalysisController(AnalysisService analysisService, ComplexityService complexityService) {
         this.analysisService = analysisService;
+        this.complexityService = complexityService;
     }
 
     @GetMapping("/outline")
@@ -71,5 +75,20 @@ public class AnalysisController {
         @RequestParam String path
     ) throws IOException {
         return analysisService.detectDeadCode(path);
+    }
+
+    @GetMapping("/complexity")
+    public List<FileComplexity> getProjectComplexity(
+        @RequestParam String path
+    ) throws IOException {
+        return complexityService.calculateProjectComplexity(path);
+    }
+    
+    @GetMapping("/complexity/file")
+    public ResponseEntity<FileComplexity> getFileComplexity(
+        @RequestParam String path
+    ) throws IOException {
+        FileComplexity complexity = complexityService.calculateFileComplexity(path);
+        return complexity != null ? ResponseEntity.ok(complexity) : ResponseEntity.notFound().build();
     }
 }
