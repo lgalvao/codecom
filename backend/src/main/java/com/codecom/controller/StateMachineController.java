@@ -30,6 +30,7 @@ public class StateMachineController {
             List<StateMachineInfo> stateMachines = stateMachineService.extractStateMachines(path);
             return ResponseEntity.ok(stateMachines);
         } catch (Exception e) {
+            System.err.println("Error extracting state machines from " + path + ": " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }

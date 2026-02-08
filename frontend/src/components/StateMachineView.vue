@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { StateMachineService, type StateMachineInfo } from '../services/StateMachineService';
 import * as d3 from 'd3';
 
@@ -223,10 +223,6 @@ function renderDiagram(svg: SVGSVGElement, machine: StateMachineInfo) {
 watch(() => props.filePath, () => {
   loadStateMachines();
 }, { immediate: true });
-
-onMounted(() => {
-  loadStateMachines();
-});
 </script>
 
 <style scoped>
