@@ -9,6 +9,7 @@ import OutlineView from './components/OutlineView.vue';
 import CodeStatistics from './components/CodeStatistics.vue';
 import DetailControlPanel from './components/DetailControlPanel.vue';
 import SymbolSearch from './components/SymbolSearch.vue';
+import TabManager from './components/TabManager.vue';
 import { getOutline as getFrontendOutline } from './services/AnalysisService';
 
 const theme = ref('dark');
@@ -23,6 +24,8 @@ const showDetailPanel = ref(false);
 const showSearchPanel = ref(false);
 const statsComponent = ref(null);
 const projectRootPath = ref('..');
+const tabManager = ref(null);
+const openTabs = ref([]);
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -55,8 +58,7 @@ const fetchTree = async () => {
   }
 };
 
-const handleFileSelect = async (node) => {
-  selectedFile.value = node;
+const loadFileContent = async (node) => {
   isLoading.value = true;
   symbols.value = [];
   try {
@@ -79,6 +81,30 @@ const handleFileSelect = async (node) => {
     fileContent.value = 'Error loading file content: ' + error.message;
   } finally {
     isLoading.value = false;
+  }
+};
+
+const handleFileSelect = async (node) => {
+  selectedFile.value = node;
+  // Add to tab manager
+  if (tabManager.value) {
+    tabManager.value.addOrActivateTab(node);
+  }
+  await loadFileContent(node);
+};
+
+const handleTabSelect = async (tab) => {
+  // Switch to selected tab
+  selectedFile.value = { name: tab.name, path: tab.path };
+  await loadFileContent(selectedFile.value);
+};
+
+const handleTabClose = (tabId) => {
+  // If all tabs are closed, clear the selected file
+  if (tabManager.value?.tabs.length === 0) {
+    selectedFile.value = null;
+    fileContent.value = '';
+    symbols.value = [];
   }
 };
 
@@ -269,11 +295,12 @@ onMounted(() => {
 
       <!-- Main Content -->
       <div class="flex-grow-1 d-flex flex-column overflow-hidden">
-        <div class="tabs-area border-bottom px-2 py-1 bg-light d-flex align-items-center" style="height: 35px; background-color: var(--sidebar-bg) !important;">
-           <span v-if="selectedFile" class="badge bg-secondary rounded-pill me-2 px-3 py-1 small fw-normal">
-             {{ selectedFile.name }}
-           </span>
-        </div>
+        <TabManager 
+          ref="tabManager"
+          :current-file="selectedFile"
+          @select="handleTabSelect"
+          @close="handleTabClose"
+        />
         <div class="flex-grow-1 p-0 overflow-hidden editor-bg position-relative d-flex">
           <div v-if="!selectedFile" class="welcome-screen d-flex flex-column align-items-center justify-content-center w-100 p-5">
             <Code :size="64" class="text-muted mb-4 opacity-25" />
