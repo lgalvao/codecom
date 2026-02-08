@@ -7,6 +7,10 @@ const props = defineProps({
   depth: {
     type: Number,
     default: 0
+  },
+  sliceFiles: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -25,6 +29,31 @@ const toggle = () => {
 const onChildSelect = (childNode) => {
   emits('select', childNode);
 };
+
+const isDimmed = () => {
+  // If no slice is active, don't dim anything
+  if (!props.sliceFiles || props.sliceFiles.length === 0) {
+    return false;
+  }
+  
+  // If this is a file, check if it's in the slice
+  if (!props.node.isDirectory) {
+    return !props.sliceFiles.includes(props.node.path);
+  }
+  
+  // For directories, dim if none of its descendants are in the slice
+  const hasSliceFile = (node) => {
+    if (!node.isDirectory) {
+      return props.sliceFiles.includes(node.path);
+    }
+    if (node.children) {
+      return node.children.some(child => hasSliceFile(child));
+    }
+    return false;
+  };
+  
+  return !hasSliceFile(props.node);
+};
 </script>
 
 <template>
@@ -33,7 +62,10 @@ const onChildSelect = (childNode) => {
       class="node-label d-flex align-items-center py-1 px-2 cursor-pointer" 
       :style="{ paddingLeft: (depth * 18 + 8) + 'px' }"
       @click="toggle"
-      :class="{ 'text-primary fw-bold': node.isDirectory && isOpen }"
+      :class="{ 
+        'text-primary fw-bold': node.isDirectory && isOpen,
+        'dimmed-node': isDimmed()
+      }"
     >
       <span v-if="node.isDirectory" class="me-1 d-flex align-items-center" style="width: 14px;">
         <ChevronDown v-if="isOpen" :size="12" />
@@ -53,6 +85,7 @@ const onChildSelect = (childNode) => {
         :key="child.path" 
         :node="child" 
         :depth="depth + 1"
+        :slice-files="sliceFiles"
         @select="onChildSelect"
       />
     </div>
@@ -84,5 +117,12 @@ const onChildSelect = (childNode) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.dimmed-node {
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+.dimmed-node:hover {
+  opacity: 0.7;
 }
 </style>

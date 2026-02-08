@@ -2,9 +2,10 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus, Download, MousePointer2, Ghost, Layers, Network } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
+import CodeMiniMap from './components/CodeMiniMap.vue';
 import OutlineView from './components/OutlineView.vue';
 import CodeStatistics from './components/CodeStatistics.vue';
 import DetailControlPanel from './components/DetailControlPanel.vue';
@@ -15,6 +16,8 @@ import ScopeIsolation from './components/ScopeIsolation.vue';
 import PackageNavigation from './components/PackageNavigation.vue';
 import ExportDialog from './components/ExportDialog.vue';
 import CallerList from './components/CallerList.vue';
+import FeatureSliceManager from './components/FeatureSliceManager.vue';
+import FlowGraphView from './components/FlowGraphView.vue';
 import { getOutline as getFrontendOutline, detectDeadCode } from './services/AnalysisService';
 import { applyFilters } from './services/CodeFilterService';
 
@@ -41,6 +44,8 @@ const clickNavigationMode = ref(false);
 const selectedMethodForCallers = ref(null);
 const deadCodeInfo = ref([]);
 const showDeadCode = ref(false);
+const activeSliceFiles = ref([]);
+const showFlowGraph = ref(false);
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -281,6 +286,13 @@ const filteredSymbols = computed(() => {
   return symbols.value;
 });
 
+// FR.34: Compute total lines for mini-map
+const totalLines = computed(() => {
+  return fileContent.value && typeof fileContent.value === 'string' 
+    ? fileContent.value.split('\n').length 
+    : 0;
+});
+
 const hiddenLines = computed(() => {
   // First, apply complexity-based hiding
   const complexityHiddenLines = new Set();
@@ -413,6 +425,10 @@ const toggleClickNavigationMode = () => {
   localStorage.setItem('clickNavigationMode', clickNavigationMode.value.toString());
 };
 
+const toggleFlowGraph = () => {
+  showFlowGraph.value = !showFlowGraph.value;
+};
+
 // FR.37: Toggle dead code visualization
 const toggleDeadCodeVisualization = async () => {
   showDeadCode.value = !showDeadCode.value;
@@ -423,6 +439,15 @@ const toggleDeadCodeVisualization = async () => {
   }
   
   localStorage.setItem('showDeadCode', showDeadCode.value.toString());
+};
+
+// FR.35: Handle feature slice changes
+const handleSliceChange = (sliceId) => {
+  // This is handled by the FeatureSliceManager component
+};
+
+const handleSliceFilesChange = (files) => {
+  activeSliceFiles.value = files;
 };
 
 /**
@@ -597,6 +622,15 @@ onMounted(() => {
           <Ghost :size="20" />
         </BButton>
         
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-info': showFlowGraph }]" 
+          @click="toggleFlowGraph"
+          title="Architecture Flow Graph (FR.33) - Interactive visualization of request lifecycle"
+        >
+          <Network :size="20" />
+        </BButton>
+        
         <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
           <Sun v-if="theme === 'dark'" :size="20" />
           <Moon v-else :size="20" />
@@ -623,7 +657,20 @@ onMounted(() => {
               <span>Connecting to backend...</span>
             </div>
           </template>
-          <FileTreeNode v-else :node="fileTree" @select="handleFileSelect" />
+          <FileTreeNode 
+            v-else 
+            :node="fileTree" 
+            :slice-files="activeSliceFiles"
+            @select="handleFileSelect" 
+          />
+        </div>
+        
+        <!-- Feature Slice Manager Section -->
+        <div class="p-3 border-top">
+          <FeatureSliceManager 
+            @slice-change="handleSliceChange"
+            @files-change="handleSliceFilesChange"
+          />
         </div>
       </div>
 
@@ -657,7 +704,7 @@ onMounted(() => {
             </div>
           </div>
           <template v-else>
-            <div class="flex-grow-1 h-100 overflow-hidden">
+            <div class="flex-grow-1 h-100 overflow-hidden position-relative">
                <CodeHighlighter 
                  :code="fileContent" 
                  :filename="selectedFile.name" 
@@ -666,6 +713,11 @@ onMounted(() => {
                  :dead-code-lines="deadCodeLines"
                  :click-navigation-mode="clickNavigationMode"
                  @navigate-to-symbol="handleNavigateToSymbol"
+               />
+               <CodeMiniMap 
+                 :symbols="symbols"
+                 :file-content="fileContent"
+                 :total-lines="totalLines"
                />
             </div>
             <!-- Outline Sidebar -->
@@ -784,6 +836,12 @@ onMounted(() => {
       :enabled="hoverTooltipEnabled"
       :current-file="selectedFile"
       @hover="handleHover"
+    />
+
+    <!-- Flow Graph View -->
+    <FlowGraphView 
+      v-if="showFlowGraph"
+      @close="showFlowGraph = false"
     />
   </div>
 </template>
