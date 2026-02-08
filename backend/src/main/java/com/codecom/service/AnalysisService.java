@@ -2,6 +2,7 @@ package com.codecom.service;
 
 import com.codecom.dto.CallerInfo;
 import com.codecom.dto.CallerStatistics;
+import com.codecom.dto.DeadCodeInfo;
 import com.codecom.dto.SymbolDefinition;
 import com.codecom.dto.SymbolInfo;
 import com.codecom.dto.SymbolSearchResult;
@@ -476,5 +477,182 @@ public class AnalysisService {
         }
         
         return references;
+    }
+
+    /**
+     * Detect potentially dead code (methods with zero internal callers)
+     * FR.37: Dead Code Detection & Visualization
+     * 
+     * @param rootPath The root directory to analyze
+     * @return List of potentially dead methods and classes
+     */
+    public List<DeadCodeInfo> detectDeadCode(String rootPath) throws IOException {
+        List<DeadCodeInfo> deadCode = new ArrayList<>();
+        
+        // Step 1: Collect all methods in the project
+        Map<String, MethodInfo> allMethods = new HashMap<>();
+        
+        try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
+            paths
+                .filter(Files::isRegularFile)
+                .filter(p -> p.toString().endsWith(".java"))
+                .filter(p -> !p.toString().contains("node_modules"))
+                .filter(p -> !p.toString().contains("target"))
+                .filter(p -> !p.toString().contains(".git"))
+                .forEach(path -> {
+                    try {
+                        String content = Files.readString(path);
+                        ParseResult<CompilationUnit> result = javaParser.parse(content);
+                        
+                        if (result.isSuccessful() && result.getResult().isPresent()) {
+                            CompilationUnit cu = result.getResult().get();
+                            boolean isTestFile = path.toString().contains("test") || path.toString().contains("Test");
+                            
+                            // Find all methods
+                            cu.accept(new VoidVisitorAdapter<Void>() {
+                                private String currentClassName = "";
+                                
+                                @Override
+                                public void visit(ClassOrInterfaceDeclaration n, Void arg) {
+                                    currentClassName = n.getNameAsString();
+                                    super.visit(n, arg);
+                                }
+                                
+                                @Override
+                                public void visit(MethodDeclaration n, Void arg) {
+                                    String methodName = n.getNameAsString();
+                                    boolean isPublic = n.isPublic();
+                                    int line = n.getRange().map(r -> r.begin.line).orElse(0);
+                                    
+                                    String key = currentClassName + "." + methodName;
+                                    allMethods.put(key, new MethodInfo(
+                                        methodName,
+                                        currentClassName,
+                                        path.toString(),
+                                        line,
+                                        isPublic,
+                                        isTestFile
+                                    ));
+                                    
+                                    super.visit(n, arg);
+                                }
+                            }, null);
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
+                    }
+                });
+        }
+        
+        // Step 2: Find all method calls in the project
+        Map<String, Integer> callCounts = new HashMap<>();
+        
+        try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
+            paths
+                .filter(Files::isRegularFile)
+                .filter(p -> p.toString().endsWith(".java"))
+                .filter(p -> !p.toString().contains("node_modules"))
+                .filter(p -> !p.toString().contains("target"))
+                .filter(p -> !p.toString().contains(".git"))
+                .forEach(path -> {
+                    try {
+                        String content = Files.readString(path);
+                        ParseResult<CompilationUnit> result = javaParser.parse(content);
+                        
+                        if (result.isSuccessful() && result.getResult().isPresent()) {
+                            CompilationUnit cu = result.getResult().get();
+                            
+                            // Find all method calls
+                            cu.accept(new VoidVisitorAdapter<Void>() {
+                                private String currentClassName = "";
+                                
+                                @Override
+                                public void visit(ClassOrInterfaceDeclaration n, Void arg) {
+                                    currentClassName = n.getNameAsString();
+                                    super.visit(n, arg);
+                                }
+                                
+                                @Override
+                                public void visit(MethodCallExpr n, Void arg) {
+                                    String methodName = n.getNameAsString();
+                                    
+                                    // Try to match with known methods
+                                    // Simple heuristic: match by method name within the same class first
+                                    String sameClassKey = currentClassName + "." + methodName;
+                                    if (allMethods.containsKey(sameClassKey)) {
+                                        callCounts.put(sameClassKey, callCounts.getOrDefault(sameClassKey, 0) + 1);
+                                    } else {
+                                        // Try to match by method name across all classes
+                                        for (String key : allMethods.keySet()) {
+                                            if (key.endsWith("." + methodName)) {
+                                                callCounts.put(key, callCounts.getOrDefault(key, 0) + 1);
+                                            }
+                                        }
+                                    }
+                                    
+                                    super.visit(n, arg);
+                                }
+                            }, null);
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
+                    }
+                });
+        }
+        
+        // Step 3: Identify methods with zero callers
+        for (Map.Entry<String, MethodInfo> entry : allMethods.entrySet()) {
+            String key = entry.getKey();
+            MethodInfo method = entry.getValue();
+            int callerCount = callCounts.getOrDefault(key, 0);
+            
+            // Mark as potentially dead if it has zero callers
+            if (callerCount == 0) {
+                String reason = method.isPublic ? "No internal callers (may be part of public API)" :
+                               method.isTest ? "No internal callers (test method)" :
+                               "No internal callers detected";
+                
+                deadCode.add(new DeadCodeInfo(
+                    method.name,
+                    "METHOD",
+                    method.className,
+                    method.filePath,
+                    method.line,
+                    callerCount,
+                    method.isPublic,
+                    method.isTest,
+                    reason
+                ));
+            }
+        }
+        
+        // Sort by file path and line number
+        deadCode.sort((a, b) -> {
+            int fileCompare = a.filePath().compareTo(b.filePath());
+            return fileCompare != 0 ? fileCompare : Integer.compare(a.line(), b.line());
+        });
+        
+        return deadCode;
+    }
+    
+    /**
+     * Helper class to store method information during dead code analysis
+     */
+    private static class MethodInfo {
+        final String name;
+        final String className;
+        final String filePath;
+        final int line;
+        final boolean isPublic;
+        final boolean isTest;
+        
+        MethodInfo(String name, String className, String filePath, int line, boolean isPublic, boolean isTest) {
+            this.name = name;
+            this.className = className;
+            this.filePath = filePath;
+            this.line = line;
+            this.isPublic = isPublic;
+            this.isTest = isTest;
+        }
     }
 }

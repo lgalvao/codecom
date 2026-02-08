@@ -205,4 +205,133 @@ class AnalysisServiceTest {
         // Exact match "User" should come before "UserService" and "userMethod"
         assertThat(results.get(0).name()).isEqualTo("User");
     }
+
+    @Test
+    void detectDeadCode_ShouldIdentifyMethodsWithNoCallers() throws IOException {
+        // Create a file with used and unused methods
+        String code = """
+            public class Service {
+                public void usedMethod() {
+                    helperMethod();
+                }
+                
+                private void helperMethod() {
+                    // Called by usedMethod
+                }
+                
+                private void unusedMethod() {
+                    // Never called
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("Service.java"), code);
+
+        var deadCode = service.detectDeadCode(tempDir.toString());
+
+        // unusedMethod should be detected as potentially dead
+        assertThat(deadCode)
+            .anyMatch(d -> d.name().equals("unusedMethod") && d.callerCount() == 0);
+        
+        // helperMethod should have at least 1 caller
+        assertThat(deadCode)
+            .noneMatch(d -> d.name().equals("helperMethod") && d.callerCount() == 0)
+            .describedAs("helperMethod should be detected as used");
+    }
+
+    @Test
+    void detectDeadCode_ShouldMarkPublicMethodsCorrectly() throws IOException {
+        String code = """
+            public class API {
+                public void publicAPI() {
+                    // No internal callers, but public
+                }
+                
+                private void privateUnused() {
+                    // No callers and private
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("API.java"), code);
+
+        var deadCode = service.detectDeadCode(tempDir.toString());
+
+        // Both should be detected, but with different isPublic flags
+        var publicMethod = deadCode.stream()
+            .filter(d -> d.name().equals("publicAPI"))
+            .findFirst();
+        assertThat(publicMethod).isPresent();
+        assertThat(publicMethod.get().isPublic()).isTrue();
+        assertThat(publicMethod.get().isPotentiallyDead()).isFalse(); // Public APIs are not marked as dead
+
+        var privateMethod = deadCode.stream()
+            .filter(d -> d.name().equals("privateUnused"))
+            .findFirst();
+        assertThat(privateMethod).isPresent();
+        assertThat(privateMethod.get().isPublic()).isFalse();
+        assertThat(privateMethod.get().isPotentiallyDead()).isTrue(); // Private unused is dead
+    }
+
+    @Test
+    void detectDeadCode_ShouldHandleTestFiles() throws IOException {
+        String testCode = """
+            public class MyTest {
+                public void testSomething() {
+                    // Test method with no internal callers
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("MyTest.java"), testCode);
+
+        var deadCode = service.detectDeadCode(tempDir.toString());
+
+        // Test method should be detected but marked as test
+        var testMethod = deadCode.stream()
+            .filter(d -> d.name().equals("testSomething"))
+            .findFirst();
+        assertThat(testMethod).isPresent();
+        assertThat(testMethod.get().isTest()).isTrue();
+        assertThat(testMethod.get().isPotentiallyDead()).isFalse(); // Tests are not marked as dead
+    }
+
+    @Test
+    void detectDeadCode_ShouldHandleMultipleFiles() throws IOException {
+        // File 1: Service with methods
+        String serviceCode = """
+            public class UserService {
+                public void save() {
+                    validate();
+                }
+                
+                private void validate() {
+                    // Called by save
+                }
+                
+                private void orphanMethod() {
+                    // Never called
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("UserService.java"), serviceCode);
+
+        // File 2: Controller that calls the service
+        String controller = """
+            public class UserController {
+                public void handleRequest() {
+                    UserService service = new UserService();
+                    service.save();
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("UserController.java"), controller);
+
+        var deadCode = service.detectDeadCode(tempDir.toString());
+
+        // orphanMethod should be dead
+        assertThat(deadCode)
+            .anyMatch(d -> d.name().equals("orphanMethod") && d.isPotentiallyDead());
+        
+        // save should have callers
+        assertThat(deadCode)
+            .noneMatch(d -> d.name().equals("save") && d.callerCount() == 0);
+    }
 }
