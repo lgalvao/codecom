@@ -11,6 +11,7 @@ import DetailControlPanel from './components/DetailControlPanel.vue';
 import SymbolSearch from './components/SymbolSearch.vue';
 import TabManager from './components/TabManager.vue';
 import { getOutline as getFrontendOutline } from './services/AnalysisService';
+import { applyFilters } from './services/CodeFilterService';
 
 const theme = ref('dark');
 const fileTree = ref(null);
@@ -110,7 +111,6 @@ const handleTabClose = (tabId) => {
 
 const handleDetailChange = (options) => {
   detailOptions.value = options;
-  // In a future implementation, this would filter the code display
   console.log('Detail options changed:', options);
 };
 
@@ -172,18 +172,33 @@ const filteredSymbols = computed(() => {
 });
 
 const hiddenLines = computed(() => {
-  if (complexity.value === 'standard') return new Set();
+  // First, apply complexity-based hiding
+  const complexityHiddenLines = new Set();
+  if (complexity.value !== 'standard') {
+    symbols.value.forEach(s => {
+      const isSimplifiedBoilerplate = complexity.value === 'simplified' && s.category === 'BOILERPLATE';
+      const isArchitecturalDetail = complexity.value === 'architectural' && s.category !== 'ARCHITECTURE' && (s.type === 'CLASS' || s.type === 'INTERFACE');
+      
+      if (isSimplifiedBoilerplate || isArchitecturalDetail) {
+        complexityHiddenLines.add(s.line);
+      }
+    });
+  }
   
-  const lines = new Set();
-  symbols.value.forEach(s => {
-    const isSimplifiedBoilerplate = complexity.value === 'simplified' && s.category === 'BOILERPLATE';
-    const isArchitecturalDetail = complexity.value === 'architectural' && s.category !== 'ARCHITECTURE' && (s.type === 'CLASS' || s.type === 'INTERFACE');
+  // Then, apply detail control filtering
+  if (selectedFile.value && fileContent.value) {
+    const extension = selectedFile.value.name.split('.').pop().toLowerCase();
+    const language = extension === 'js' ? 'javascript' : 
+                      extension === 'ts' || extension === 'tsx' ? 'typescript' : 
+                      'java';
     
-    if (isSimplifiedBoilerplate || isArchitecturalDetail) {
-      lines.add(s.line);
-    }
-  });
-  return lines;
+    const filterResult = applyFilters(fileContent.value, detailOptions.value, language);
+    
+    // Combine both sets of hidden lines
+    filterResult.hiddenLines.forEach(line => complexityHiddenLines.add(line));
+  }
+  
+  return complexityHiddenLines;
 });
 
 const handleSymbolSelect = (symbol) => {
