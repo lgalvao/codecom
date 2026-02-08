@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StatisticsService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">codecom-backend</a> &gt; <a href="index.source.html" class="el_package">com.codecom.service</a> &gt; <span class="el_source">StatisticsService.java</span></div><h1>StatisticsService.java</h1><pre class="source lang-java linenums">package com.codecom.service;
+
+import com.codecom.dto.CodeStatistics;
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.ParseResult;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.*;
+import com.github.javaparser.ast.comments.Comment;
+import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+public class StatisticsService {
+
+    private final JavaParser javaParser;
+
+<span class="fc" id="L25">    public StatisticsService() {</span>
+<span class="fc" id="L26">        ParserConfiguration config = new ParserConfiguration();</span>
+<span class="fc" id="L27">        config.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17_PREVIEW);</span>
+<span class="fc" id="L28">        this.javaParser = new JavaParser(config);</span>
+<span class="fc" id="L29">    }</span>
+
+    /**
+     * Calculate statistics for a single file.
+     */
+    public CodeStatistics calculateFileStatistics(String path) throws IOException {
+<span class="fc" id="L35">        String content = Files.readString(Path.of(path));</span>
+<span class="fc" id="L36">        String extension = getExtension(path);</span>
+
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        return switch (extension) {</span>
+<span class="fc" id="L39">            case &quot;java&quot; -&gt; calculateJavaStatistics(content);</span>
+<span class="fc" id="L40">            default -&gt; calculateGenericStatistics(content);</span>
+        };
+    }
+
+    /**
+     * Calculate statistics for a directory (recursively).
+     */
+    public CodeStatistics calculateDirectoryStatistics(String directoryPath) throws IOException {
+<span class="fc" id="L48">        Path dir = Path.of(directoryPath);</span>
+        
+<span class="fc" id="L50">        int totalLines = 0;</span>
+<span class="fc" id="L51">        int codeLines = 0;</span>
+<span class="fc" id="L52">        int commentLines = 0;</span>
+<span class="fc" id="L53">        int blankLines = 0;</span>
+<span class="fc" id="L54">        int methodCount = 0;</span>
+<span class="fc" id="L55">        int classCount = 0;</span>
+<span class="fc" id="L56">        int interfaceCount = 0;</span>
+<span class="fc" id="L57">        int recordCount = 0;</span>
+<span class="fc" id="L58">        Set&lt;String&gt; packages = new HashSet&lt;&gt;();</span>
+
+<span class="fc" id="L60">        var files = Files.walk(dir)</span>
+<span class="fc" id="L61">            .filter(Files::isRegularFile)</span>
+<span class="fc" id="L62">            .filter(p -&gt; isCodeFile(p.toString()))</span>
+<span class="fc" id="L63">            .collect(Collectors.toList());</span>
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (Path file : files) {</span>
+<span class="fc" id="L66">            CodeStatistics fileStats = calculateFileStatistics(file.toString());</span>
+<span class="fc" id="L67">            totalLines += fileStats.totalLines();</span>
+<span class="fc" id="L68">            codeLines += fileStats.codeLines();</span>
+<span class="fc" id="L69">            commentLines += fileStats.commentLines();</span>
+<span class="fc" id="L70">            blankLines += fileStats.blankLines();</span>
+<span class="fc" id="L71">            methodCount += fileStats.methodCount();</span>
+<span class="fc" id="L72">            classCount += fileStats.classCount();</span>
+<span class="fc" id="L73">            interfaceCount += fileStats.interfaceCount();</span>
+<span class="fc" id="L74">            recordCount += fileStats.recordCount();</span>
+            
+            // Extract package from Java files
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            if (getExtension(file.toString()).equals(&quot;java&quot;)) {</span>
+<span class="fc" id="L78">                String pkg = extractPackageName(Files.readString(file));</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">                if (!pkg.isEmpty()) {</span>
+<span class="fc" id="L80">                    packages.add(pkg);</span>
+                }
+            }
+<span class="fc" id="L83">        }</span>
+
+<span class="fc" id="L85">        return new CodeStatistics(</span>
+            totalLines,
+            codeLines,
+            commentLines,
+            blankLines,
+            methodCount,
+            classCount,
+            interfaceCount,
+            recordCount,
+<span class="fc" id="L94">            packages.size()</span>
+        );
+    }
+
+    private CodeStatistics calculateJavaStatistics(String content) {
+<span class="fc" id="L99">        ParseResult&lt;CompilationUnit&gt; result = javaParser.parse(content);</span>
+        
+<span class="pc bpc" id="L101" title="2 of 4 branches missed.">        if (!result.isSuccessful() || result.getResult().isEmpty()) {</span>
+<span class="nc" id="L102">            return calculateGenericStatistics(content);</span>
+        }
+
+<span class="fc" id="L105">        CompilationUnit cu = result.getResult().get();</span>
+        
+        // Count lines
+<span class="fc" id="L108">        String[] lines = content.split(&quot;\n&quot;);</span>
+<span class="fc" id="L109">        int totalLines = lines.length;</span>
+        
+        // Get all comment ranges
+<span class="fc" id="L112">        Set&lt;Integer&gt; commentLineNumbers = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L113">        cu.getAllComments().forEach(comment -&gt; {</span>
+<span class="fc" id="L114">            comment.getRange().ifPresent(range -&gt; {</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">                for (int i = range.begin.line; i &lt;= range.end.line; i++) {</span>
+<span class="fc" id="L116">                    commentLineNumbers.add(i);</span>
+                }
+<span class="fc" id="L118">            });</span>
+<span class="fc" id="L119">        });</span>
+        
+        // Count blank and code lines
+<span class="fc" id="L122">        int blankLines = 0;</span>
+<span class="fc" id="L123">        int codeLines = 0;</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        for (int i = 0; i &lt; lines.length; i++) {</span>
+<span class="fc" id="L125">            int lineNum = i + 1; // Lines are 1-indexed</span>
+<span class="fc" id="L126">            String line = lines[i].trim();</span>
+            
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (line.isEmpty()) {</span>
+<span class="fc" id="L129">                blankLines++;</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            } else if (!commentLineNumbers.contains(lineNum)) {</span>
+                // Check if line starts with comment markers (for inline comments not caught by parser)
+<span class="pc bpc" id="L132" title="3 of 6 branches missed.">                if (!line.startsWith(&quot;//&quot;) &amp;&amp; !line.startsWith(&quot;/*&quot;) &amp;&amp; !line.startsWith(&quot;*&quot;)) {</span>
+<span class="fc" id="L133">                    codeLines++;</span>
+                }
+            }
+        }
+        
+<span class="fc" id="L138">        int commentLines = commentLineNumbers.size();</span>
+        
+        // Count structures using visitor
+<span class="fc" id="L141">        StructureCounter counter = new StructureCounter();</span>
+<span class="fc" id="L142">        cu.accept(counter, null);</span>
+        
+<span class="fc" id="L144">        return new CodeStatistics(</span>
+            totalLines,
+            codeLines,
+            commentLines,
+            blankLines,
+            counter.methodCount,
+            counter.classCount,
+            counter.interfaceCount,
+            counter.recordCount,
+            0  // Package count is calculated at directory level
+        );
+    }
+
+    private CodeStatistics calculateGenericStatistics(String content) {
+<span class="fc" id="L158">        String[] lines = content.split(&quot;\n&quot;);</span>
+<span class="fc" id="L159">        int totalLines = lines.length;</span>
+<span class="fc" id="L160">        int blankLines = 0;</span>
+<span class="fc" id="L161">        int codeLines = 0;</span>
+        
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        for (String line : lines) {</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            if (line.trim().isEmpty()) {</span>
+<span class="fc" id="L165">                blankLines++;</span>
+            } else {
+<span class="fc" id="L167">                codeLines++;</span>
+            }
+        }
+        
+<span class="fc" id="L171">        return new CodeStatistics(</span>
+            totalLines,
+            codeLines,
+            0,  // Can't accurately detect comments in generic files
+            blankLines,
+            0, 0, 0, 0, 0
+        );
+    }
+
+    private String extractPackageName(String content) {
+<span class="fc" id="L181">        ParseResult&lt;CompilationUnit&gt; result = javaParser.parse(content);</span>
+<span class="pc bpc" id="L182" title="2 of 4 branches missed.">        if (result.isSuccessful() &amp;&amp; result.getResult().isPresent()) {</span>
+<span class="fc" id="L183">            CompilationUnit cu = result.getResult().get();</span>
+<span class="fc" id="L184">            return cu.getPackageDeclaration()</span>
+<span class="fc" id="L185">                .map(pd -&gt; pd.getNameAsString())</span>
+<span class="fc" id="L186">                .orElse(&quot;&quot;);</span>
+        }
+<span class="nc" id="L188">        return &quot;&quot;;</span>
+    }
+
+    private boolean isCodeFile(String path) {
+<span class="fc" id="L192">        String ext = getExtension(path);</span>
+<span class="fc" id="L193">        return ext.matches(&quot;java|js|ts|jsx|tsx|py|rb|go|rs|kt|scala|cs|cpp|c|h|hpp&quot;);</span>
+    }
+
+    private String getExtension(String path) {
+<span class="fc" id="L197">        int lastDot = path.lastIndexOf('.');</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">        return lastDot == -1 ? &quot;&quot; : path.substring(lastDot + 1).toLowerCase();</span>
+    }
+
+    /**
+     * Visitor to count Java structures (classes, interfaces, records, methods).
+     */
+<span class="fc" id="L204">    private static class StructureCounter extends VoidVisitorAdapter&lt;Void&gt; {</span>
+<span class="fc" id="L205">        int methodCount = 0;</span>
+<span class="fc" id="L206">        int classCount = 0;</span>
+<span class="fc" id="L207">        int interfaceCount = 0;</span>
+<span class="fc" id="L208">        int recordCount = 0;</span>
+
+        @Override
+        public void visit(ClassOrInterfaceDeclaration n, Void arg) {
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            if (n.isInterface()) {</span>
+<span class="fc" id="L213">                interfaceCount++;</span>
+            } else {
+<span class="fc" id="L215">                classCount++;</span>
+            }
+<span class="fc" id="L217">            super.visit(n, arg);</span>
+<span class="fc" id="L218">        }</span>
+
+        @Override
+        public void visit(RecordDeclaration n, Void arg) {
+<span class="fc" id="L222">            recordCount++;</span>
+<span class="fc" id="L223">            super.visit(n, arg);</span>
+<span class="fc" id="L224">        }</span>
+
+        @Override
+        public void visit(MethodDeclaration n, Void arg) {
+<span class="fc" id="L228">            methodCount++;</span>
+<span class="fc" id="L229">            super.visit(n, arg);</span>
+<span class="fc" id="L230">        }</span>
+
+        @Override
+        public void visit(ConstructorDeclaration n, Void arg) {
+<span class="fc" id="L234">            methodCount++;</span>
+<span class="fc" id="L235">            super.visit(n, arg);</span>
+<span class="fc" id="L236">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

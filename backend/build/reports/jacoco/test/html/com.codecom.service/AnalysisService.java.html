@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-<span class="fc" id="L20">public class AnalysisService {</span>
+<span class="nc" id="L20">public class AnalysisService {</span>
 
     private static final String TYPE_CLASS = &quot;CLASS&quot;;
     private static final String TYPE_METHOD = &quot;METHOD&quot;;
@@ -26,69 +26,69 @@ import java.util.List;
     private static final String CAT_BOILERPLATE = &quot;BOILERPLATE&quot;;
     private static final String CAT_ARCHITECTURE = &quot;ARCHITECTURE&quot;;
 
-<span class="fc" id="L29">    private final JavaParser javaParser = new JavaParser();</span>
+<span class="nc" id="L29">    private final JavaParser javaParser = new JavaParser();</span>
 
     public List&lt;SymbolInfo&gt; getOutline(String path) throws IOException {
-<span class="fc" id="L32">        String content = Files.readString(Path.of(path));</span>
-<span class="fc" id="L33">        String extension = getExtension(path);</span>
+<span class="nc" id="L32">        String content = Files.readString(Path.of(path));</span>
+<span class="nc" id="L33">        String extension = getExtension(path);</span>
 
-<span class="fc bfc" id="L35" title="All 2 branches covered.">        return switch (extension) {</span>
-<span class="fc" id="L36">            case &quot;java&quot; -&gt; extractJavaSymbols(content);</span>
-<span class="fc" id="L37">            default -&gt; new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        return switch (extension) {</span>
+<span class="nc" id="L36">            case &quot;java&quot; -&gt; extractJavaSymbols(content);</span>
+<span class="nc" id="L37">            default -&gt; new ArrayList&lt;&gt;();</span>
         };
     }
 
     private String getExtension(String path) {
-<span class="fc" id="L42">        int lastDot = path.lastIndexOf('.');</span>
-<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        return lastDot == -1 ? &quot;&quot; : path.substring(lastDot + 1).toLowerCase();</span>
+<span class="nc" id="L42">        int lastDot = path.lastIndexOf('.');</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        return lastDot == -1 ? &quot;&quot; : path.substring(lastDot + 1).toLowerCase();</span>
     }
 
     private List&lt;SymbolInfo&gt; extractJavaSymbols(String content) {
-<span class="fc" id="L47">        List&lt;SymbolInfo&gt; symbols = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L48">        ParseResult&lt;CompilationUnit&gt; result = javaParser.parse(content);</span>
+<span class="nc" id="L47">        List&lt;SymbolInfo&gt; symbols = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L48">        ParseResult&lt;CompilationUnit&gt; result = javaParser.parse(content);</span>
 
-<span class="fc" id="L50">        java.util.Optional&lt;CompilationUnit&gt; cuOpt = result.getResult();</span>
-<span class="pc bpc" id="L51" title="2 of 4 branches missed.">        if (result.isSuccessful() &amp;&amp; cuOpt.isPresent()) {</span>
-<span class="fc" id="L52">            CompilationUnit cu = cuOpt.get();</span>
-<span class="fc" id="L53">            cu.accept(new VoidVisitorAdapter&lt;List&lt;SymbolInfo&gt;&gt;() {</span>
+<span class="nc" id="L50">        java.util.Optional&lt;CompilationUnit&gt; cuOpt = result.getResult();</span>
+<span class="nc bnc" id="L51" title="All 4 branches missed.">        if (result.isSuccessful() &amp;&amp; cuOpt.isPresent()) {</span>
+<span class="nc" id="L52">            CompilationUnit cu = cuOpt.get();</span>
+<span class="nc" id="L53">            cu.accept(new VoidVisitorAdapter&lt;List&lt;SymbolInfo&gt;&gt;() {</span>
                 @Override
                 public void visit(ClassOrInterfaceDeclaration n, List&lt;SymbolInfo&gt; arg) {
-<span class="pc bpc" id="L56" title="1 of 4 branches missed.">                    String category = (n.isInterface() || n.isAbstract()) ? CAT_ARCHITECTURE : CAT_CORE;</span>
-<span class="fc" id="L57">                    n.getNameAsString();</span>
-<span class="fc" id="L58">                    n.getRange().ifPresent(range -&gt; </span>
-<span class="fc" id="L59">                        arg.add(new SymbolInfo(n.getNameAsString(), TYPE_CLASS, range.begin.line, range.begin.column, category))</span>
+<span class="nc bnc" id="L56" title="All 4 branches missed.">                    String category = (n.isInterface() || n.isAbstract()) ? CAT_ARCHITECTURE : CAT_CORE;</span>
+<span class="nc" id="L57">                    n.getNameAsString();</span>
+<span class="nc" id="L58">                    n.getRange().ifPresent(range -&gt; </span>
+<span class="nc" id="L59">                        arg.add(new SymbolInfo(n.getNameAsString(), TYPE_CLASS, range.begin.line, range.begin.column, category))</span>
                     );
-<span class="fc" id="L61">                    super.visit(n, arg);</span>
-<span class="fc" id="L62">                }</span>
+<span class="nc" id="L61">                    super.visit(n, arg);</span>
+<span class="nc" id="L62">                }</span>
 
                 @Override
                 public void visit(MethodDeclaration n, List&lt;SymbolInfo&gt; arg) {
-<span class="fc" id="L66">                    String name = n.getNameAsString();</span>
-<span class="pc bpc" id="L67" title="2 of 6 branches missed.">                    final String category = (name.startsWith(&quot;get&quot;) || name.startsWith(&quot;set&quot;) || name.startsWith(&quot;is&quot;)) </span>
-<span class="fc" id="L68">                        ? CAT_BOILERPLATE : CAT_CORE;</span>
+<span class="nc" id="L66">                    String name = n.getNameAsString();</span>
+<span class="nc bnc" id="L67" title="All 6 branches missed.">                    final String category = (name.startsWith(&quot;get&quot;) || name.startsWith(&quot;set&quot;) || name.startsWith(&quot;is&quot;)) </span>
+<span class="nc" id="L68">                        ? CAT_BOILERPLATE : CAT_CORE;</span>
 
-<span class="fc" id="L70">                    n.getRange().ifPresent(range -&gt; </span>
-<span class="fc" id="L71">                        arg.add(new SymbolInfo(name, TYPE_METHOD, range.begin.line, range.begin.column, category))</span>
+<span class="nc" id="L70">                    n.getRange().ifPresent(range -&gt; </span>
+<span class="nc" id="L71">                        arg.add(new SymbolInfo(name, TYPE_METHOD, range.begin.line, range.begin.column, category))</span>
                     );
-<span class="fc" id="L73">                    super.visit(n, arg);</span>
-<span class="fc" id="L74">                }</span>
+<span class="nc" id="L73">                    super.visit(n, arg);</span>
+<span class="nc" id="L74">                }</span>
 
                 @Override
                 public void visit(ConstructorDeclaration n, List&lt;SymbolInfo&gt; arg) {
-<span class="fc" id="L78">                    n.getRange().ifPresent(range -&gt; </span>
-<span class="fc" id="L79">                        arg.add(new SymbolInfo(n.getNameAsString(), TYPE_METHOD, range.begin.line, range.begin.column, CAT_BOILERPLATE))</span>
+<span class="nc" id="L78">                    n.getRange().ifPresent(range -&gt; </span>
+<span class="nc" id="L79">                        arg.add(new SymbolInfo(n.getNameAsString(), TYPE_METHOD, range.begin.line, range.begin.column, CAT_BOILERPLATE))</span>
                     );
-<span class="fc" id="L81">                    super.visit(n, arg);</span>
-<span class="fc" id="L82">                }</span>
+<span class="nc" id="L81">                    super.visit(n, arg);</span>
+<span class="nc" id="L82">                }</span>
             }, symbols);
             
             // Final sort by line and column to be extra sure
-<span class="fc" id="L86">            symbols.sort((a, b) -&gt; {</span>
-<span class="pc bpc" id="L87" title="1 of 2 branches missed.">                if (a.line() != b.line()) return Integer.compare(a.line(), b.line());</span>
+<span class="nc" id="L86">            symbols.sort((a, b) -&gt; {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (a.line() != b.line()) return Integer.compare(a.line(), b.line());</span>
 <span class="nc" id="L88">                return Integer.compare(a.column(), b.column());</span>
             });
         }
-<span class="fc" id="L91">        return symbols;</span>
+<span class="nc" id="L91">        return symbols;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
