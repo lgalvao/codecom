@@ -1,6 +1,7 @@
 package com.codecom.controller;
 
 import com.codecom.dto.SymbolInfo;
+import com.codecom.dto.SymbolSearchResult;
 import com.codecom.service.AnalysisService;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,5 +22,13 @@ public class AnalysisController {
     @GetMapping("/outline")
     public List<SymbolInfo> getOutline(@RequestParam String path) throws IOException {
         return analysisService.getOutline(path);
+    }
+
+    @GetMapping("/search")
+    public List<SymbolSearchResult> searchSymbols(
+        @RequestParam String path,
+        @RequestParam String query
+    ) throws IOException {
+        return analysisService.searchSymbols(path, query);
     }
 }

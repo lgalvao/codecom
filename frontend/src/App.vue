@@ -2,12 +2,13 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import OutlineView from './components/OutlineView.vue';
 import CodeStatistics from './components/CodeStatistics.vue';
 import DetailControlPanel from './components/DetailControlPanel.vue';
+import SymbolSearch from './components/SymbolSearch.vue';
 import { getOutline as getFrontendOutline } from './services/AnalysisService';
 
 const theme = ref('dark');
@@ -19,7 +20,9 @@ const isLoading = ref(false);
 const complexity = ref('standard');
 const showStatsPanel = ref(false);
 const showDetailPanel = ref(false);
+const showSearchPanel = ref(false);
 const statsComponent = ref(null);
+const projectRootPath = ref('..');
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -88,11 +91,44 @@ const handleDetailChange = (options) => {
 const toggleStatsPanel = () => {
   showStatsPanel.value = !showStatsPanel.value;
   if (showDetailPanel.value) showDetailPanel.value = false;
+  if (showSearchPanel.value) showSearchPanel.value = false;
 };
 
 const toggleDetailPanel = () => {
   showDetailPanel.value = !showDetailPanel.value;
   if (showStatsPanel.value) showStatsPanel.value = false;
+  if (showSearchPanel.value) showSearchPanel.value = false;
+};
+
+const toggleSearchPanel = () => {
+  showSearchPanel.value = !showSearchPanel.value;
+  if (showStatsPanel.value) showStatsPanel.value = false;
+  if (showDetailPanel.value) showDetailPanel.value = false;
+};
+
+const handleSearchSelect = async (result) => {
+  // Close search panel
+  showSearchPanel.value = false;
+  
+  // Open the file
+  const node = { path: result.filePath, name: result.fileName };
+  await handleFileSelect(node);
+  
+  // Scroll to the line
+  setTimeout(() => {
+    const lineNum = result.line;
+    const editor = document.querySelector('.shiki-container pre');
+    if (editor) {
+      const lines = editor.querySelectorAll('.line');
+      if (lines[lineNum - 1]) {
+        lines[lineNum - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        lines[lineNum - 1].classList.add('highlight-line');
+        setTimeout(() => {
+          lines[lineNum - 1].classList.remove('highlight-line');
+        }, 1000);
+      }
+    }
+  }, 500);
 };
 
 const filteredSymbols = computed(() => {
@@ -144,6 +180,14 @@ onMounted(() => {
   theme.value = savedTheme;
   document.documentElement.dataset.bsTheme = theme.value;
   fetchTree();
+  
+  // Add keyboard shortcut for symbol search (Ctrl+Shift+F or Cmd+Shift+F)
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+      e.preventDefault();
+      toggleSearchPanel();
+    }
+  });
 });
 </script>
 
@@ -165,6 +209,15 @@ onMounted(() => {
           :class="theme === 'dark' ? 'bg-dark text-white border-secondary' : 'bg-light text-dark border-secondary'" 
           style="width: 150px;" 
         />
+        
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showSearchPanel }]" 
+          @click="toggleSearchPanel"
+          title="Symbol Search (Ctrl+Shift+F)"
+        >
+          <SearchIcon :size="20" />
+        </BButton>
         
         <BButton 
           variant="link" 
@@ -284,6 +337,21 @@ onMounted(() => {
       title="Detail Control"
     >
       <DetailControlPanel @change="handleDetailChange" />
+    </BOffcanvas>
+
+    <!-- Symbol Search Panel -->
+    <BOffcanvas 
+      v-model="showSearchPanel" 
+      placement="end"
+      title="Symbol Search"
+      :no-header="true"
+    >
+      <SymbolSearch 
+        :root-path="projectRootPath"
+        :visible="showSearchPanel"
+        @select="handleSearchSelect"
+        @close="showSearchPanel = false"
+      />
     </BOffcanvas>
   </div>
 </template>

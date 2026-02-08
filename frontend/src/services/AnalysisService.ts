@@ -1,4 +1,5 @@
 import { Parser, Language, Query } from 'web-tree-sitter';
+import axios from 'axios';
 
 let isInitialized = false;
 const languages: Record<string, Language> = {};
@@ -48,6 +49,11 @@ export interface SymbolInfo {
   category: string;
 }
 
+export interface SymbolSearchResult extends SymbolInfo {
+  filePath: string;
+  fileName: string;
+}
+
 export async function getOutline(code: string, filePath: string): Promise<SymbolInfo[]> {
   await initTreeSitter();
   
@@ -91,4 +97,22 @@ function determineCategory(type: string, name: string): string {
   // Simple boilerplate detection for JS/TS getters/setters
   if (name.startsWith('get') || name.startsWith('set')) return 'BOILERPLATE';
   return 'CORE';
+}
+
+/**
+ * Search for symbols across the project
+ * @param rootPath The root directory to search
+ * @param query The search query
+ * @returns List of matching symbols with file information
+ */
+export async function searchSymbols(rootPath: string, query: string): Promise<SymbolSearchResult[]> {
+  try {
+    const response = await axios.get('http://localhost:8080/api/analysis/search', {
+      params: { path: rootPath, query }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error searching symbols:', error);
+    return [];
+  }
 }

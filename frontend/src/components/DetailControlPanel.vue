@@ -98,6 +98,11 @@ const presets = {
 const emitChange = () => {
   emit('change', { ...options.value });
 };
+
+const applyPreset = (presetKey: keyof typeof presets) => {
+  options.value = { ...presets[presetKey].options };
+  emitChange();
+};
 </script>
 
 <template>
