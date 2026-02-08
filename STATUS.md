@@ -40,6 +40,7 @@ This document tracks the implementation progress of **CodeCom** against the requ
 | **FR.30** | Multi-Format Export | 🟢 Done | Export UI and service fully tested. Markdown and PDF/HTML export working. |
 | **FR.31** | Project-Wide Export | 🟢 Done | Backend integration complete. Multi-file export via API endpoint working. |
 | **FR.37** | Dead Code Detection | 🟢 Done | Methods with zero internal callers displayed with ghost mode (40% opacity). |
+| **FR.38** | Relationship Graph Database | 🟢 Partial | Entity schema and service foundation complete. CALLS/INHERITS implemented. |
 | **FR.40** | Definition Peek (Code Bubble) | 🟢 Done | Enhanced hover tooltips show first 10 lines of implementation. |
 | **FR.41** | Interactive Breadcrumb Navigation | 🟢 Done | Clickable breadcrumb dropdowns showing sibling methods/classes at every level. |
 
@@ -76,23 +77,25 @@ This document tracks the implementation progress of **CodeCom** against the requ
 
 ## Current Implementation Status
 - 🟢 **Done**: 33/41 (80%) - Includes all FR.1-31 plus FR.37, FR.40-41
-- 🟢 **Partial**: 1/41 (2%) - FR.1, FR.9, FR.10 need enhancement
-- 🔴 **Missing**: 7/41 (17%) - FR.32-36, FR.38-39 not yet started
+- 🟢 **Partial**: 2/41 (5%) - FR.1, FR.9, FR.10, FR.38 need completion/enhancement
+- 🔴 **Missing**: 6/41 (15%) - FR.32-36, FR.39 not yet started
 
 ## Next High-Priority Gaps
 1. **Test Coverage**: Target 80% frontend coverage (currently ~77%)
    - Main gap: App.vue at ~53% needs integration tests
-2. **FR.1, FR.9, FR.10**: Review and enhance as needed
-3. **Advanced Features (FR.32-41)**: Continue foundation features
+2. **FR.1, FR.9, FR.10, FR.38**: Complete partial implementations
+   - FR.38: Add INJECTS/MAPS_TO_URL relationships, API endpoints, tests
+3. **Advanced Features (FR.32-41)**: Continue with remaining features
    - ✅ FR.37: Dead Code Detection (Complete)
    - ✅ FR.40: Definition Peek (Complete)
    - ✅ FR.41: Breadcrumb Navigation (Complete)
-   - Next: FR.38-39 (Knowledge Graph)
+   - 🟡 FR.38: Knowledge Graph (Foundation complete, needs API/tests)
+   - Next: FR.39 (Cross-Language Query), FR.32-36 (Visualizations)
 
 ## Implementation History
 
-### Session 5 - Dead Code Detection (February 8, 2026)
-**Focus**: Implement FR.37 - Dead Code Detection & Visualization
+### Session 5 - Dead Code Detection & Knowledge Graph Foundation (February 8, 2026)
+**Focus**: Implement FR.37 - Dead Code Detection & Start FR.38 - Knowledge Graph
 
 **Achievements**:
 - ✅ Implemented FR.37: Dead Code Detection with ghost mode styling (40% opacity)
@@ -103,19 +106,30 @@ This document tracks the implementation progress of **CodeCom** against the requ
 - ✅ Integrated dead code detection in App.vue with toggle button (Ghost icon)
 - ✅ Added localStorage persistence for dead code visualization preference
 - ✅ Added 4 new backend tests for dead code detection
+- ✅ **FR.38 Foundation**: Created entity schema for knowledge graph
+- ✅ Created CodeNode and CodeRelationship JPA entities
+- ✅ Created CodeNodeRepository and CodeRelationshipRepository
+- ✅ Implemented KnowledgeGraphService with project indexing
+- ✅ Implemented CALLS and INHERITS relationship tracking
 - ✅ Backend test coverage remains at 94% (52 tests total, up from 48)
 - ✅ Frontend test coverage remains at ~77% (284 tests total)
 
 **New Features**: 
-- Dead code detection and visualization (FR.37)
+- Dead code detection and visualization (FR.37) - Complete
+- Knowledge graph foundation (FR.38) - Partial
 - Ghost mode styling with 40% opacity for unused methods
 - UI toggle to enable/disable dead code highlighting
+- JPA-based graph database structure
 
 **New Components**: 
 - Backend: DeadCodeInfo.java (DTO)
+- Backend: CodeNode.java, CodeRelationship.java (Entities)
+- Backend: CodeNodeRepository.java, CodeRelationshipRepository.java
+- Backend: KnowledgeGraphService.java
 - Frontend: Ghost mode styling in CodeHighlighter
 
-**API Endpoints**: `/api/analysis/dead-code` (GET) for detecting unused methods
+**API Endpoints**: 
+- `/api/analysis/dead-code` (GET) for detecting unused methods
 
 **Files Modified**: 
 - Backend: AnalysisService.java, AnalysisController.java, AnalysisServiceTest.java
