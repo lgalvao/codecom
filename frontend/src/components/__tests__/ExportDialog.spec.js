@@ -3,7 +3,7 @@
  * Testing FR.30-FR.31: Export UI functionality
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ExportDialog from '../ExportDialog.vue';
 import * as ExportService from '../../services/ExportService';
