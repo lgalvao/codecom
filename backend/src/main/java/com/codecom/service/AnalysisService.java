@@ -204,6 +204,7 @@ public class AnalysisService {
             .toList();
 
         String documentation = extractJavadoc(method);
+        String codePreview = extractCodePreview(method, filePath);
 
         int line = method.getRange().map(r -> r.begin.line).orElse(0);
 
@@ -215,7 +216,8 @@ public class AnalysisService {
             parameters,
             documentation,
             filePath,
-            line
+            line,
+            codePreview
         );
     }
 
@@ -234,6 +236,7 @@ public class AnalysisService {
         signature.append(classDecl.getNameAsString());
         
         String documentation = extractJavadoc(classDecl);
+        String codePreview = extractCodePreview(classDecl, filePath);
 
         int line = classDecl.getRange().map(r -> r.begin.line).orElse(0);
 
@@ -245,8 +248,49 @@ public class AnalysisService {
             List.of(),
             documentation,
             filePath,
-            line
+            line,
+            codePreview
         );
+    }
+
+    /**
+     * Extract code preview (first 10 lines of implementation) for FR.40
+     * @param node The AST node (method or class)
+     * @param filePath The file path
+     * @return String containing up to 10 lines of code
+     */
+    private String extractCodePreview(Node node, String filePath) {
+        try {
+            if (!node.getRange().isPresent()) {
+                return null;
+            }
+            
+            String content = Files.readString(Path.of(filePath));
+            String[] lines = content.split("\n");
+            
+            int startLine = node.getRange().get().begin.line - 1; // 0-based index
+            int endLine = Math.min(startLine + 10, lines.length); // Max 10 lines
+            
+            StringBuilder preview = new StringBuilder();
+            for (int i = startLine; i < endLine; i++) {
+                preview.append(lines[i]);
+                if (i < endLine - 1) {
+                    preview.append("\n");
+                }
+            }
+            
+            String result = preview.toString();
+            
+            // If we're showing less than the full node, add an indicator
+            if (node.getRange().isPresent() && 
+                endLine < node.getRange().get().end.line) {
+                result += "\n...";
+            }
+            
+            return result;
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     private String extractJavadoc(Node node) {

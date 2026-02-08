@@ -39,6 +39,7 @@ This document tracks the implementation progress of **CodeCom** against the requ
 | **FR.29** | Cross-Reference Navigation | 🟢 Done | Bidirectional navigation history service implemented. |
 | **FR.30** | Multi-Format Export | 🟢 Done | Export UI and service fully tested. Markdown and PDF/HTML export working. |
 | **FR.31** | Project-Wide Export | 🟢 Done | Backend integration complete. Multi-file export via API endpoint working. |
+| **FR.40** | Definition Peek (Code Bubble) | 🟢 Done | Enhanced hover tooltips show first 10 lines of implementation. |
 
 ## Technical Summary
 - **Backend**: Spring Boot 4 / Java 25 is operational.
@@ -51,6 +52,10 @@ This document tracks the implementation progress of **CodeCom** against the requ
 - **Total Tests**: 313 passing (265 frontend + 48 backend)
 
 ## Recent Improvements (Current Session)
+- ✅ **FR.40**: Implemented Definition Peek (Code Bubble) showing first 10 lines of implementation
+- ✅ **Hover Tooltips**: Enhanced to show code preview with syntax highlighting
+- ✅ **SymbolDefinition**: Added codePreview field to DTO for code bubble support
+- ✅ **AnalysisService**: Added extractCodePreview method for FR.40
 - ✅ **FR.31**: Implemented backend integration for project-wide multi-file export
 - ✅ **Export Service**: Added backend API for exporting multiple files in markdown/HTML format
 - ✅ **Export Dialog**: Enhanced to support package and project-wide export scopes
@@ -66,34 +71,46 @@ This document tracks the implementation progress of **CodeCom** against the requ
 - ✅ **Test Coverage**: ExportDialog coverage improved from 40% to ~85%
 
 ## Current Implementation Status
-- 🟢 **Done**: 30/31 (97%)
-- 🟢 **Partial**: 1/31 (3%)
-- 🔴 **Missing**: 0/31 (0%)
+- 🟢 **Done**: 31/41 (76%) - Includes all FR.1-31 plus FR.40
+- 🟢 **Partial**: 1/41 (2%) - FR.1, FR.9, FR.10 need enhancement
+- 🔴 **Missing**: 9/41 (22%) - FR.32-39, FR.41 not yet started
 
 ## Next High-Priority Gaps
 1. **Test Coverage**: Target 80% frontend coverage (currently ~76%)
    - Main gap: App.vue at ~53% needs integration tests
-2. **FR.1, FR.9, FR.10**: Review and enhance if needed
-3. **Advanced Features (FR.32-41)**: Begin implementation of foundation features
+2. **FR.1, FR.9, FR.10**: Review and enhance as needed
+3. **Advanced Features (FR.32-41)**: Continue foundation features
+   - ✅ FR.40: Definition Peek (Complete)
+   - Next: FR.41 (Breadcrumb), FR.37 (Dead Code), FR.38-39 (Knowledge Graph)
 
 ## Implementation History
 
-### Session 4 - Project-Wide Export (February 8, 2026)
-**Focus**: Complete FR.31 backend integration for multi-file export
+### Session 4 - Project-Wide Export & Definition Peek (February 8, 2026)
+**Focus**: Complete FR.31 backend integration and implement FR.40 Definition Peek
 
 **Achievements**:
-- ✅ Implemented backend ExportService with support for multiple files
+- ✅ Implemented FR.31: Backend ExportService with support for multiple files
 - ✅ Created `/api/export` REST endpoint for batch file export
 - ✅ Enhanced ExportDialog to support package and project-wide export
+- ✅ Implemented FR.40: Definition Peek (Code Bubble) showing first 10 lines
+- ✅ Enhanced HoverTooltip to display code preview with scrolling
+- ✅ Added extractCodePreview method to AnalysisService
+- ✅ Updated SymbolDefinition DTO to include codePreview field
 - ✅ Added 10 new backend tests (ExportServiceTest, ExportControllerTest)
 - ✅ Updated frontend tests to match new functionality
 - ✅ Backend test coverage remains at 94% (48 tests total)
 - ✅ Frontend test coverage maintained at ~76% (265 tests total)
 
+**New Features**: 
+- Code bubble tooltips (FR.40)
+- Project-wide export (FR.31)
+
 **New Components**: ExportService.java, ExportController.java
 **New DTOs**: ExportRequest.java, ExportResult.java
 **API Endpoints**: `/api/export` (POST) for multi-file export
-**Files Modified**: ExportService.ts, ExportDialog.vue
+**Files Modified**: 
+- Backend: AnalysisService.java, SymbolDefinition.java
+- Frontend: ExportService.ts, ExportDialog.vue, HoverTooltip.vue
 
 ### Session 3 - Export Testing & Navigation (February 8, 2026)
 **Focus**: Complete control-click navigation and export testing
