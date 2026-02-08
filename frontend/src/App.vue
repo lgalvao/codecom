@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BButton, BNavbar, BNavbarBrand, BFormSelect, BOffcanvas } from 'bootstrap-vue-next';
-import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings } from 'lucide-vue-next';
+import { Sun, Moon, FolderOpen, Code, BarChart3, Sliders, Search as SearchIcon, Settings, Focus } from 'lucide-vue-next';
 import FileTreeNode from './components/FileTreeNode.vue';
 import CodeHighlighter from './components/CodeHighlighter.vue';
 import OutlineView from './components/OutlineView.vue';
@@ -10,6 +10,8 @@ import CodeStatistics from './components/CodeStatistics.vue';
 import DetailControlPanel from './components/DetailControlPanel.vue';
 import SymbolSearch from './components/SymbolSearch.vue';
 import TabManager from './components/TabManager.vue';
+import HoverTooltip from './components/HoverTooltip.vue';
+import ScopeIsolation from './components/ScopeIsolation.vue';
 import { getOutline as getFrontendOutline } from './services/AnalysisService';
 import { applyFilters } from './services/CodeFilterService';
 
@@ -23,10 +25,13 @@ const complexity = ref('standard');
 const showStatsPanel = ref(false);
 const showDetailPanel = ref(false);
 const showSearchPanel = ref(false);
+const showScopePanel = ref(false);
 const statsComponent = ref(null);
 const projectRootPath = ref('..');
 const tabManager = ref(null);
 const openTabs = ref([]);
+const hoverTooltipEnabled = ref(true);
+const isolatedSymbol = ref(null);
 const detailOptions = ref({
   showComments: true,
   showImports: true,
@@ -124,12 +129,21 @@ const toggleDetailPanel = () => {
   showDetailPanel.value = !showDetailPanel.value;
   if (showStatsPanel.value) showStatsPanel.value = false;
   if (showSearchPanel.value) showSearchPanel.value = false;
+  if (showScopePanel.value) showScopePanel.value = false;
 };
 
 const toggleSearchPanel = () => {
   showSearchPanel.value = !showSearchPanel.value;
   if (showStatsPanel.value) showStatsPanel.value = false;
   if (showDetailPanel.value) showDetailPanel.value = false;
+  if (showScopePanel.value) showScopePanel.value = false;
+};
+
+const toggleScopePanel = () => {
+  showScopePanel.value = !showScopePanel.value;
+  if (showStatsPanel.value) showStatsPanel.value = false;
+  if (showDetailPanel.value) showDetailPanel.value = false;
+  if (showSearchPanel.value) showSearchPanel.value = false;
 };
 
 const handleSearchSelect = async (result) => {
@@ -155,6 +169,20 @@ const handleSearchSelect = async (result) => {
       }
     }
   }, 500);
+};
+
+const handleHover = (element, position) => {
+  // In future implementation, query backend for symbol information
+  console.log('Hover at:', position, 'Element:', element.textContent);
+};
+
+const handleScopeIsolate = (symbol) => {
+  isolatedSymbol.value = symbol;
+  console.log('Isolating symbol:', symbol);
+};
+
+const handleScopeClear = () => {
+  isolatedSymbol.value = null;
 };
 
 const filteredSymbols = computed(() => {
@@ -185,6 +213,19 @@ const hiddenLines = computed(() => {
     });
   }
   
+  // Apply scope isolation dimming
+  if (isolatedSymbol.value) {
+    const startLine = isolatedSymbol.value.line;
+    const endLine = isolatedSymbol.value.endLine || startLine + 20; // Estimate end if not provided
+    
+    // Dim all lines except the isolated range
+    for (let i = 1; i <= fileContent.value.split('\n').length; i++) {
+      if (i < startLine || i > endLine) {
+        complexityHiddenLines.add(i);
+      }
+    }
+  }
+  
   // Then, apply detail control filtering
   if (selectedFile.value && fileContent.value) {
     const extension = selectedFile.value.name.split('.').pop().toLowerCase();
@@ -194,8 +235,10 @@ const hiddenLines = computed(() => {
     
     const filterResult = applyFilters(fileContent.value, detailOptions.value, language);
     
-    // Combine both sets of hidden lines
-    filterResult.hiddenLines.forEach(line => complexityHiddenLines.add(line));
+    // Combine both sets of hidden lines (but don't hide if in isolated range)
+    if (!isolatedSymbol.value) {
+      filterResult.hiddenLines.forEach(line => complexityHiddenLines.add(line));
+    }
   }
   
   return complexityHiddenLines;
@@ -276,6 +319,15 @@ onMounted(() => {
           title="Detail Control"
         >
           <Sliders :size="20" />
+        </BButton>
+        
+        <BButton 
+          variant="link" 
+          :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showScopePanel }]" 
+          @click="toggleScopePanel"
+          title="Scope Isolation"
+        >
+          <Focus :size="20" />
         </BButton>
         
         <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
@@ -395,6 +447,26 @@ onMounted(() => {
         @close="showSearchPanel = false"
       />
     </BOffcanvas>
+
+    <!-- Scope Isolation Panel -->
+    <BOffcanvas 
+      v-model="showScopePanel" 
+      placement="end"
+      title="Scope Isolation"
+    >
+      <ScopeIsolation 
+        :symbols="symbols"
+        :current-file="selectedFile?.name"
+        @isolate="handleScopeIsolate"
+        @clear="handleScopeClear"
+      />
+    </BOffcanvas>
+
+    <!-- Hover Tooltip -->
+    <HoverTooltip 
+      :enabled="hoverTooltipEnabled"
+      @hover="handleHover"
+    />
   </div>
 </template>
 
