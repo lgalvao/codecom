@@ -150,13 +150,15 @@ function getColor(score: number): string {
 }
 
 function getLevelColor(level: string): string {
-  const scores: Record<string, number> = {
+  // Representative scores for each complexity level (matches backend thresholds)
+  // LOW: 0-25%, MEDIUM: 25-50%, HIGH: 50-75%, VERY_HIGH: 75-100%
+  const LEVEL_SCORES: Record<string, number> = {
     'LOW': 0.12,
     'MEDIUM': 0.37,
     'HIGH': 0.62,
     'VERY_HIGH': 0.87
   };
-  return getColor(scores[level] || 0);
+  return getColor(LEVEL_SCORES[level] || 0);
 }
 
 function getFileName(filePath: string): string {

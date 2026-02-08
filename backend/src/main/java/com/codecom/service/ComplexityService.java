@@ -8,6 +8,8 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ConditionalExpr;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -26,6 +28,7 @@ import java.util.stream.Stream;
 @Service
 public class ComplexityService {
     
+    private static final Logger logger = LoggerFactory.getLogger(ComplexityService.class);
     private final JavaParser javaParser = new JavaParser();
     
     /**
@@ -48,7 +51,7 @@ public class ComplexityService {
                             complexities.add(complexity);
                         }
                     } catch (IOException e) {
-                        System.err.println("Error calculating complexity for " + path + ": " + e.getMessage());
+                        logger.error("Error calculating complexity for {}: {}", path, e.getMessage());
                     }
                 });
         }

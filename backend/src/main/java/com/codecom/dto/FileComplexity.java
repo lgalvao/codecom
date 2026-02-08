@@ -22,12 +22,21 @@ public class FileComplexity {
         this.complexityLevel = determineLevel();
     }
     
+    // Normalization thresholds for complexity scoring
+    // These values represent typical ranges for well-structured code:
+    // - CC: 100+ indicates very complex methods that should be refactored
+    // - LoC: 500+ lines suggest a file that's too large
+    // - Methods: 50+ methods in one file indicates poor cohesion
+    private static final int CC_NORMALIZATION_THRESHOLD = 100;
+    private static final int LOC_NORMALIZATION_THRESHOLD = 500;
+    private static final int METHOD_NORMALIZATION_THRESHOLD = 50;
+    
     private Double calculateScore() {
         // Normalize complexity score based on multiple factors
         // Weight: 50% cyclomatic complexity, 30% LoC, 20% methods
-        double ccScore = Math.min(cyclomaticComplexity / 100.0, 1.0);
-        double locScore = Math.min(linesOfCode / 500.0, 1.0);
-        double methodScore = Math.min(numberOfMethods / 50.0, 1.0);
+        double ccScore = Math.min(cyclomaticComplexity / (double) CC_NORMALIZATION_THRESHOLD, 1.0);
+        double locScore = Math.min(linesOfCode / (double) LOC_NORMALIZATION_THRESHOLD, 1.0);
+        double methodScore = Math.min(numberOfMethods / (double) METHOD_NORMALIZATION_THRESHOLD, 1.0);
         
         return (ccScore * 0.5) + (locScore * 0.3) + (methodScore * 0.2);
     }

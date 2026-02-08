@@ -357,13 +357,14 @@ public class KnowledgeGraphService {
      * FR.39: Cross-Language Query Support
      */
     public List<List<Long>> findCallChain(Long sourceId, Long targetId, int maxDepth) {
+        final int MAX_CHAINS = 10; // Limit results to prevent excessive memory usage
         List<List<Long>> chains = new ArrayList<>();
         Queue<List<Long>> queue = new LinkedList<>();
         Set<Long> visited = new HashSet<>();
         
         queue.add(List.of(sourceId));
         
-        while (!queue.isEmpty() && chains.size() < 10) { // Limit to 10 chains
+        while (!queue.isEmpty() && chains.size() < MAX_CHAINS) {
             List<Long> currentPath = queue.poll();
             Long currentNode = currentPath.get(currentPath.size() - 1);
             
