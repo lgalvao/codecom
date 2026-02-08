@@ -20,6 +20,11 @@ export interface FilteredLine {
  * Filter code lines based on detail control options
  */
 export function filterCode(code: string, options: DetailControlOptions, language: string = 'java'): FilteredLine[] {
+  // Safety check for invalid input
+  if (!code || typeof code !== 'string') {
+    return [];
+  }
+  
   const lines = code.split('\n');
   const filteredLines: FilteredLine[] = [];
   
