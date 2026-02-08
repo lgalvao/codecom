@@ -26,9 +26,43 @@ The system MUST support syntax highlighting and basic structural awareness for t
 ### 3.3. Project Navigation
 - **FR.7: Virtual File Tree**: Responsive file explorer capable of handling deep structures.
 - **FR.8: Tab Management**: Persistent tab state across sessions.
-### 3.4. Persistence & Project Management [NEW]
+
+### 3.4. Persistence & Project Management
 - **FR.9: Project Indexing**: The system shall index local directories and store metadata (file paths, symbol maps) in a local database.
 - **FR.10: User Preferences**: Persistent storage for theme selection, complexity settings, and recently opened files.
+
+### 3.5. Code Statistics
+- **FR.11: Total Line Count**: The system shall calculate and display the total number of lines in each file and across the entire project.
+- **FR.12: Code Line Count (Non-Comment, Non-Blank)**: Display line counts excluding comments and blank lines for accurate code density metrics.
+- **FR.13: Method Statistics**: Count and display the total number of methods/functions across files and the project.
+- **FR.14: Structure Statistics**: Count and display the number of classes, records, interfaces, and packages/modules in the project.
+
+### 3.6. Detail Level Control
+- **FR.15: Full Detail View**: Display complete code with all elements (default view).
+- **FR.16: No Comments Mode**: Filter view to hide all comment lines while preserving code structure.
+- **FR.17: Signatures Only Mode**: Display only method and class signatures, hiding implementation details.
+- **FR.18: Abbreviated Parameter Types**: Show method parameters with shortened type names (e.g., "String" instead of "java.lang.String").
+- **FR.19: No Parameter Types**: Display method signatures with parameter names only, omitting type information.
+- **FR.20: No Parameters Mode**: Show method signatures without any parameter details.
+- **FR.21: Public Members Only**: Filter to display only public methods, classes, and interfaces.
+- **FR.22: Hide Imports**: Option to collapse or hide import statements to reduce visual clutter.
+
+### 3.7. Advanced Navigation
+- **FR.23: Package Navigation**: Provide next/previous navigation controls to move between files within the same package/directory.
+- **FR.24: Control-Click Navigation**: Enable control/command-click on symbols to navigate to their definitions.
+- **FR.25: Click Navigation Mode**: Toggle mode where regular clicks (without modifier keys) navigate to symbol definitions.
+- **FR.26: Caller List**: Display a list of all methods/functions that call the currently selected method.
+- **FR.27: Caller Statistics**: Show statistics about callers, including call frequency and caller locations.
+- **FR.28: Test References**: Identify and list all test files that reference the current class or method.
+- **FR.29: Cross-Reference Navigation**: Navigate bidirectionally between callers and callees in the codebase.
+
+### 3.8. Export Functionality
+- **FR.30: Multi-Format Export**: Export project code to PDF and Markdown formats with multiple complexity levels:
+  - Full detail (all code with comments)
+  - Medium detail (code without comments)
+  - Low detail (signatures only)
+  - Architectural view (public interfaces only)
+- **FR.31: Project-Wide Export**: Support exporting entire projects or selected packages/files with configurable detail levels.
 
 ## 4. UI/UX Requirements
 - **NFR.1: Performance**: Large files (>2000 lines) must render within 200ms without blocking the UI thread.
