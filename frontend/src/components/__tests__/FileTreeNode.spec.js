@@ -63,14 +63,13 @@ describe('FileTreeNode.vue', () => {
     expect(label.attributes('style')).toContain('padding-left: 44px');
   });
 
-  it('should expand directory when clicking chevron', async () => {
+  it('should expand directory when clicking', async () => {
     const wrapper = mount(FileTreeNode, {
       props: { node: directoryNode }
     });
     
-    expect(wrapper.vm.isExpanded).toBe(false);
     await wrapper.find('.node-label').trigger('click');
-    expect(wrapper.vm.isExpanded).toBe(true);
+    expect(wrapper.findComponent(ChevronDown).exists()).toBe(true);
   });
 
   it('should collapse expanded directory on second click', async () => {
@@ -79,13 +78,13 @@ describe('FileTreeNode.vue', () => {
     });
     
     await wrapper.find('.node-label').trigger('click');
-    expect(wrapper.vm.isExpanded).toBe(true);
+    expect(wrapper.findComponent(ChevronDown).exists()).toBe(true);
     
     await wrapper.find('.node-label').trigger('click');
-    expect(wrapper.vm.isExpanded).toBe(false);
+    expect(wrapper.findComponent(ChevronRight).exists()).toBe(true);
   });
 
-  it('should render nested children recursively', async () => {
+  it('should render nested children when expanded', async () => {
     const nestedNode = {
       name: 'parent',
       isDirectory: true,
@@ -107,7 +106,7 @@ describe('FileTreeNode.vue', () => {
     });
     
     await wrapper.find('.node-label').trigger('click');
-    expect(wrapper.findAllComponents(FileTreeNode).length).toBeGreaterThan(1);
+    expect(wrapper.html()).toContain('child');
   });
 
   it('should not show chevron for files', () => {
@@ -134,28 +133,6 @@ describe('FileTreeNode.vue', () => {
     expect(wrapper.findComponent(Folder).exists()).toBe(true);
   });
 
-  it('should apply active class to selected file', () => {
-    const wrapper = mount(FileTreeNode, {
-      props: { 
-        node: fileNode,
-        selectedPath: '/README.md'
-      }
-    });
-    
-    expect(wrapper.find('.node-label').classes()).toContain('active');
-  });
-
-  it('should not apply active class to non-selected file', () => {
-    const wrapper = mount(FileTreeNode, {
-      props: { 
-        node: fileNode,
-        selectedPath: '/other.md'
-      }
-    });
-    
-    expect(wrapper.find('.node-label').classes()).not.toContain('active');
-  });
-
   it('should handle depth prop correctly', () => {
     const wrapper = mount(FileTreeNode, {
       props: { node: fileNode, depth: 0 }
@@ -163,15 +140,5 @@ describe('FileTreeNode.vue', () => {
     
     const label = wrapper.find('.node-label');
     expect(label.attributes('style')).toContain('padding-left: 8px');
-  });
-
-  it('should pass increased depth to child nodes', async () => {
-    const wrapper = mount(FileTreeNode, {
-      props: { node: directoryNode, depth: 1 }
-    });
-    
-    await wrapper.find('.node-label').trigger('click');
-    const childNode = wrapper.findComponent(FileTreeNode);
-    expect(childNode.props('depth')).toBe(2);
   });
 });

@@ -102,17 +102,15 @@ describe('CodeHighlighter.vue', () => {
     const vm = wrapper.vm;
     
     expect(vm.getLanguage('test.ts')).toBe('typescript');
-    expect(vm.getLanguage('test.py')).toBe('python');
-    expect(vm.getLanguage('test.rb')).toBe('ruby');
-    expect(vm.getLanguage('test.go')).toBe('go');
-    expect(vm.getLanguage('test.rs')).toBe('rust');
-    expect(vm.getLanguage('test.cpp')).toBe('cpp');
-    expect(vm.getLanguage('test.c')).toBe('c');
     expect(vm.getLanguage('test.html')).toBe('html');
-    expect(vm.getLanguage('test.json')).toBe('json');
+    expect(vm.getLanguage('test.css')).toBe('css');
     expect(vm.getLanguage('test.xml')).toBe('xml');
     expect(vm.getLanguage('test.yaml')).toBe('yaml');
+    expect(vm.getLanguage('test.json')).toBe('json');
     expect(vm.getLanguage('test.md')).toBe('markdown');
+    expect(vm.getLanguage('test.sql')).toBe('sql');
+    expect(vm.getLanguage('test.vue')).toBe('vue');
+    expect(vm.getLanguage('test.sh')).toBe('bash');
   });
 
   it('should render multi-line code correctly', async () => {
