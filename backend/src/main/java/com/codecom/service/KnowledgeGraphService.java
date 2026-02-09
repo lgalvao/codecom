@@ -10,7 +10,6 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +18,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
@@ -29,6 +30,15 @@ import java.util.stream.Stream;
 @Service
 public class KnowledgeGraphService {
     
+    private static final Logger LOGGER = Logger.getLogger(KnowledgeGraphService.class.getName());
+    
+    private static final String TYPE_METHOD = "METHOD";
+    private static final String TYPE_CLASS = "CLASS";
+    private static final String TYPE_INTERFACE = "INTERFACE";
+    
+    private static final String REL_CALLS = "CALLS";
+    private static final String REL_INHERITS = "INHERITS";
+
     private final CodeNodeRepository nodeRepository;
     private final CodeRelationshipRepository relationshipRepository;
     private final JavaParser javaParser = new JavaParser();
@@ -63,7 +73,7 @@ public class KnowledgeGraphService {
                     try {
                         indexFile(path.toString(), nodeCache);
                     } catch (IOException e) {
-                        System.err.println("Error indexing file " + path + ": " + e.getMessage());
+                        LOGGER.log(Level.SEVERE, "Error indexing file {0}: {1}", new Object[]{path, e.getMessage()});
                     }
                 });
         }
@@ -80,7 +90,7 @@ public class KnowledgeGraphService {
                     try {
                         indexRelationships(path.toString(), nodeCache);
                     } catch (IOException e) {
-                        System.err.println("Error indexing relationships in " + path + ": " + e.getMessage());
+                        LOGGER.log(Level.SEVERE, "Error indexing relationships in {0}: {1}", new Object[]{path, e.getMessage()});
                     }
                 });
         }
@@ -92,12 +102,13 @@ public class KnowledgeGraphService {
     private void indexFile(String filePath, Map<String, CodeNode> nodeCache) throws IOException {
         String content = Files.readString(Path.of(filePath));
         ParseResult<CompilationUnit> result = javaParser.parse(content);
+        java.util.Optional<CompilationUnit> cuOpt = result.getResult();
         
-        if (!result.isSuccessful() || result.getResult().isEmpty()) {
+        if (!result.isSuccessful() || cuOpt.isEmpty()) {
             return;
         }
         
-        CompilationUnit cu = result.getResult().get();
+        CompilationUnit cu = cuOpt.get();
         String packageName = cu.getPackageDeclaration()
             .map(pd -> pd.getNameAsString())
             .orElse("");
@@ -108,7 +119,7 @@ public class KnowledgeGraphService {
             public void visit(ClassOrInterfaceDeclaration n, Void arg) {
                 CodeNode node = new CodeNode(
                     n.getNameAsString(),
-                    n.isInterface() ? "INTERFACE" : "CLASS",
+                    n.isInterface() ? TYPE_INTERFACE : TYPE_CLASS,
                     filePath,
                     n.getRange().map(r -> r.begin.line).orElse(0)
                 );
@@ -130,7 +141,7 @@ public class KnowledgeGraphService {
             public void visit(MethodDeclaration n, Void arg) {
                 CodeNode node = new CodeNode(
                     n.getNameAsString(),
-                    "METHOD",
+                    TYPE_METHOD,
                     filePath,
                     n.getRange().map(r -> r.begin.line).orElse(0)
                 );
@@ -158,35 +169,36 @@ public class KnowledgeGraphService {
     private void indexRelationships(String filePath, Map<String, CodeNode> nodeCache) throws IOException {
         String content = Files.readString(Path.of(filePath));
         ParseResult<CompilationUnit> result = javaParser.parse(content);
+        java.util.Optional<CompilationUnit> cuOpt = result.getResult();
         
-        if (!result.isSuccessful() || result.getResult().isEmpty()) {
+        if (!result.isSuccessful() || cuOpt.isEmpty()) {
             return;
         }
         
-        CompilationUnit cu = result.getResult().get();
+        CompilationUnit cu = cuOpt.get();
         String packageName = cu.getPackageDeclaration()
             .map(pd -> pd.getNameAsString())
             .orElse("");
         
         // Index inheritance and implementation relationships
         cu.accept(new VoidVisitorAdapter<Void>() {
-            private CodeNode currentClass = null;
+            
             private CodeNode currentMethod = null;
             
             @Override
             public void visit(ClassOrInterfaceDeclaration n, Void arg) {
                 String classKey = packageName + "." + n.getNameAsString();
-                currentClass = nodeCache.get(classKey);
+                final CodeNode currentClassNode = nodeCache.get(classKey);
                 
-                if (currentClass != null) {
+                if (currentClassNode != null) {
                     // Index INHERITS relationships
-                    n.getExtendedTypes().forEach(extType -> {
-                        createInheritanceRelationship(currentClass, extType.getNameAsString(), nodeCache);
-                    });
+                    n.getExtendedTypes().forEach(extType -> 
+                        createInheritanceRelationship(currentClassNode, extType.getNameAsString(), nodeCache)
+                    );
                     
-                    n.getImplementedTypes().forEach(implType -> {
-                        createInheritanceRelationship(currentClass, implType.getNameAsString(), nodeCache);
-                    });
+                    n.getImplementedTypes().forEach(implType -> 
+                        createInheritanceRelationship(currentClassNode, implType.getNameAsString(), nodeCache)
+                    );
                 }
                 
                 super.visit(n, arg);
@@ -215,12 +227,12 @@ public class KnowledgeGraphService {
                     // This is simplified - a full implementation would do type resolution
                     for (Map.Entry<String, CodeNode> entry : nodeCache.entrySet()) {
                         if (entry.getValue().getName().equals(methodName) && 
-                            entry.getValue().getNodeType().equals("METHOD")) {
+                            entry.getValue().getNodeType().equals(TYPE_METHOD)) {
                             
                             CodeRelationship relationship = new CodeRelationship(
                                 currentMethod.getId(),
                                 entry.getValue().getId(),
-                                "CALLS"
+                                REL_CALLS
                             );
                             relationship.setLineNumber(n.getRange().map(r -> r.begin.line).orElse(0));
                             
@@ -239,13 +251,13 @@ public class KnowledgeGraphService {
         // Try to find the target in the cache
         for (Map.Entry<String, CodeNode> entry : nodeCache.entrySet()) {
             if (entry.getValue().getName().equals(targetName) && 
-                (entry.getValue().getNodeType().equals("CLASS") || 
-                 entry.getValue().getNodeType().equals("INTERFACE"))) {
+                (entry.getValue().getNodeType().equals(TYPE_CLASS) || 
+                 entry.getValue().getNodeType().equals(TYPE_INTERFACE))) {
                 
                 CodeRelationship relationship = new CodeRelationship(
                     source.getId(),
                     entry.getValue().getId(),
-                    "INHERITS"
+                    REL_INHERITS
                 );
                 
                 relationshipRepository.save(relationship);
@@ -279,13 +291,11 @@ public class KnowledgeGraphService {
      * Find all nodes that a given node calls
      */
     public List<CodeNode> findCallees(Long nodeId) {
-        List<CodeRelationship> relationships = relationshipRepository
-            .findBySourceIdAndRelationshipType(nodeId, "CALLS");
-        
-        return relationships.stream()
+        return relationshipRepository
+            .findBySourceIdAndRelationshipType(nodeId, REL_CALLS)
+            .stream()
             .map(r -> nodeRepository.findById(r.getTargetId()))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
+            .flatMap(Optional::stream)
             .toList();
     }
     
@@ -293,13 +303,11 @@ public class KnowledgeGraphService {
      * Find all nodes that call a given node
      */
     public List<CodeNode> findCallers(Long nodeId) {
-        List<CodeRelationship> relationships = relationshipRepository
-            .findByTargetIdAndRelationshipType(nodeId, "CALLS");
-        
-        return relationships.stream()
+        return relationshipRepository
+            .findByTargetIdAndRelationshipType(nodeId, REL_CALLS)
+            .stream()
             .map(r -> nodeRepository.findById(r.getSourceId()))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
+            .flatMap(Optional::stream)
             .toList();
     }
     
@@ -327,13 +335,11 @@ public class KnowledgeGraphService {
      * FR.38: Relationship Graph Database
      */
     public List<CodeNode> findInheritanceHierarchy(Long nodeId) {
-        List<CodeRelationship> relationships = relationshipRepository
-            .findBySourceIdAndRelationshipType(nodeId, "INHERITS");
-        
-        return relationships.stream()
+        return relationshipRepository
+            .findBySourceIdAndRelationshipType(nodeId, REL_INHERITS)
+            .stream()
             .map(r -> nodeRepository.findById(r.getTargetId()))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
+            .flatMap(Optional::stream)
             .toList();
     }
     
@@ -342,13 +348,11 @@ public class KnowledgeGraphService {
      * FR.38: Relationship Graph Database
      */
     public List<CodeNode> findSubclasses(Long nodeId) {
-        List<CodeRelationship> relationships = relationshipRepository
-            .findByTargetIdAndRelationshipType(nodeId, "INHERITS");
-        
-        return relationships.stream()
+        return relationshipRepository
+            .findByTargetIdAndRelationshipType(nodeId, REL_INHERITS)
+            .stream()
             .map(r -> nodeRepository.findById(r.getSourceId()))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
+            .flatMap(Optional::stream)
             .toList();
     }
     
@@ -366,36 +370,33 @@ public class KnowledgeGraphService {
         
         while (!queue.isEmpty() && chains.size() < MAX_CHAINS) {
             List<Long> currentPath = queue.poll();
-            Long currentNode = currentPath.get(currentPath.size() - 1);
-            
-            if (currentPath.size() > maxDepth) {
+            if (currentPath == null || currentPath.size() > maxDepth) {
                 continue;
             }
-            
+
+            Long currentNode = currentPath.get(currentPath.size() - 1);
             if (currentNode.equals(targetId)) {
                 chains.add(new ArrayList<>(currentPath));
-                continue;
-            }
-            
-            if (visited.contains(currentNode)) {
-                continue;
-            }
-            visited.add(currentNode);
-            
-            // Find all nodes this node calls
-            List<CodeRelationship> callRels = relationshipRepository
-                .findBySourceIdAndRelationshipType(currentNode, "CALLS");
-            
-            for (CodeRelationship rel : callRels) {
-                if (!currentPath.contains(rel.getTargetId())) {
-                    List<Long> newPath = new ArrayList<>(currentPath);
-                    newPath.add(rel.getTargetId());
-                    queue.add(newPath);
-                }
+            } else if (!visited.contains(currentNode)) {
+                visited.add(currentNode);
+                exploreNode(currentNode, currentPath, queue);
             }
         }
         
         return chains;
+    }
+
+    private void exploreNode(Long currentNode, List<Long> currentPath, Queue<List<Long>> queue) {
+        List<CodeRelationship> callRels = relationshipRepository
+            .findBySourceIdAndRelationshipType(currentNode, REL_CALLS);
+        
+        for (CodeRelationship rel : callRels) {
+            if (!currentPath.contains(rel.getTargetId())) {
+                List<Long> newPath = new ArrayList<>(currentPath);
+                newPath.add(rel.getTargetId());
+                queue.add(newPath);
+            }
+        }
     }
     
     /**
@@ -408,52 +409,56 @@ public class KnowledgeGraphService {
      * - "type:CLASS public:true" - Find all public classes
      */
     public List<CodeNode> executeQuery(String query) {
-        List<CodeNode> results = new ArrayList<>();
+        Map<String, String> queryParams = parseQuery(query);
         
-        // Parse simple query format: "key:value key:value"
-        String[] parts = query.split(" ");
+        if (queryParams.containsKey("calls")) {
+            return findByRelation(queryParams.get("calls"), this::findCallers);
+        } else if (queryParams.containsKey("inherits")) {
+            return findByRelation(queryParams.get("inherits"), this::findSubclasses);
+        } else if (queryParams.containsKey("type")) {
+            return findByTypeAndCriteria(queryParams);
+        } else if (queryParams.containsKey("name")) {
+            return nodeRepository.searchByName(queryParams.get("name"));
+        }
+        
+        return new ArrayList<>();
+    }
+
+    private Map<String, String> parseQuery(String query) {
         Map<String, String> queryParams = new HashMap<>();
-        
+        String[] parts = query.split(" ");
         for (String part : parts) {
             String[] kv = part.split(":", 2);
             if (kv.length == 2) {
                 queryParams.put(kv[0].toLowerCase(), kv[1]);
             }
         }
-        
-        // Handle different query types
-        if (queryParams.containsKey("calls")) {
-            String methodName = queryParams.get("calls");
-            List<CodeNode> methods = nodeRepository.searchByName(methodName);
-            for (CodeNode method : methods) {
-                results.addAll(findCallers(method.getId()));
-            }
-        } else if (queryParams.containsKey("inherits")) {
-            String className = queryParams.get("inherits");
-            List<CodeNode> classes = nodeRepository.searchByName(className);
-            for (CodeNode clazz : classes) {
-                results.addAll(findSubclasses(clazz.getId()));
-            }
-        } else if (queryParams.containsKey("type")) {
-            String nodeType = queryParams.get("type").toUpperCase();
-            results = nodeRepository.findByNodeType(nodeType);
-            
-            // Filter by additional criteria
-            if (queryParams.containsKey("public") && "true".equals(queryParams.get("public"))) {
-                results = results.stream()
-                    .filter(n -> Boolean.TRUE.equals(n.getIsPublic()))
-                    .toList();
-            }
-            if (queryParams.containsKey("package")) {
-                String packageName = queryParams.get("package");
-                results = results.stream()
-                    .filter(n -> packageName.equals(n.getPackageName()))
-                    .toList();
-            }
-        } else if (queryParams.containsKey("name")) {
-            results = nodeRepository.searchByName(queryParams.get("name"));
+        return queryParams;
+    }
+
+    private List<CodeNode> findByRelation(String name, java.util.function.LongFunction<List<CodeNode>> relationFunc) {
+        List<CodeNode> results = new ArrayList<>();
+        List<CodeNode> nodes = nodeRepository.searchByName(name);
+        for (CodeNode node : nodes) {
+            results.addAll(relationFunc.apply(node.getId()));
         }
+        return results;
+    }
+
+    private List<CodeNode> findByTypeAndCriteria(Map<String, String> params) {
+        List<CodeNode> results = nodeRepository.findByNodeType(params.get("type").toUpperCase());
         
+        if (params.containsKey("public") && "true".equals(params.get("public"))) {
+            results = results.stream()
+                .filter(n -> Boolean.TRUE.equals(n.getIsPublic()))
+                .toList();
+        }
+        if (params.containsKey("package")) {
+            String pkg = params.get("package");
+            results = results.stream()
+                .filter(n -> pkg.equals(n.getPackageName()))
+                .toList();
+        }
         return results;
     }
 }

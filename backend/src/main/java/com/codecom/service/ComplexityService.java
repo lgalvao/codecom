@@ -16,9 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -66,18 +64,18 @@ public class ComplexityService {
         String content = Files.readString(Path.of(filePath));
         ParseResult<CompilationUnit> result = javaParser.parse(content);
         
-        if (!result.isSuccessful() || result.getResult().isEmpty()) {
+        if (!result.isSuccessful()) {
             return null;
         }
         
-        CompilationUnit cu = result.getResult().get();
-        
-        // Calculate metrics
-        int cyclomaticComplexity = calculateCyclomaticComplexity(cu);
-        int linesOfCode = countLinesOfCode(content);
-        int numberOfMethods = countMethods(cu);
-        
-        return new FileComplexity(filePath, cyclomaticComplexity, linesOfCode, numberOfMethods);
+        return result.getResult().map(cu -> {
+            // Calculate metrics
+            int cyclomaticComplexity = calculateCyclomaticComplexity(cu);
+            int linesOfCode = countLinesOfCode(content);
+            int numberOfMethods = countMethods(cu);
+            
+            return new FileComplexity(filePath, cyclomaticComplexity, linesOfCode, numberOfMethods);
+        }).orElse(null);
     }
     
     /**
@@ -106,24 +104,19 @@ public class ComplexityService {
         for (String line : lines) {
             String trimmed = line.trim();
             
-            // Skip blank lines
-            if (trimmed.isEmpty()) continue;
-            
-            // Handle block comments
-            if (trimmed.startsWith("/*")) {
-                inBlockComment = true;
-            }
-            if (inBlockComment) {
-                if (trimmed.endsWith("*/") || trimmed.contains("*/")) {
-                    inBlockComment = false;
+            if (!trimmed.isEmpty()) {
+                if (trimmed.startsWith("/*")) {
+                    inBlockComment = true;
                 }
-                continue;
+                
+                if (inBlockComment) {
+                    if (trimmed.endsWith("*/") || trimmed.contains("*/")) {
+                        inBlockComment = false;
+                    }
+                } else if (!trimmed.startsWith("//")) {
+                    count++;
+                }
             }
-            
-            // Skip single-line comments
-            if (trimmed.startsWith("//")) continue;
-            
-            count++;
         }
         
         return count;

@@ -17,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.lenient;
 
@@ -28,6 +27,11 @@ import static org.mockito.Mockito.lenient;
 @ExtendWith(MockitoExtension.class)
 class FlowGraphServiceTest {
     
+    private static final String USER_LIST = "UserList";
+    private static final String TYPE_CLASS = "CLASS";
+    private static final String USER_SERVICE = "UserService";
+    private static final String REL_CALLS = "CALLS";
+
     @Mock
     private CodeNodeRepository nodeRepository;
     
@@ -46,28 +50,28 @@ class FlowGraphServiceTest {
         testNodes = new ArrayList<>();
         
         // Component layer
-        CodeNode component = new CodeNode("UserList", "CLASS", 
+        CodeNode component = new CodeNode(USER_LIST, TYPE_CLASS, 
             "/project/frontend/src/components/UserList.vue", 10);
         component.setId(1L);
         component.setPackageName("components");
         testNodes.add(component);
         
         // Service TypeScript layer
-        CodeNode serviceTs = new CodeNode("UserService", "CLASS", 
+        CodeNode serviceTs = new CodeNode(USER_SERVICE, TYPE_CLASS, 
             "/project/frontend/src/services/UserService.ts", 5);
         serviceTs.setId(2L);
         serviceTs.setPackageName("services");
         testNodes.add(serviceTs);
         
         // Controller layer
-        CodeNode controller = new CodeNode("UserController", "CLASS", 
+        CodeNode controller = new CodeNode("UserController", TYPE_CLASS, 
             "/project/backend/src/main/java/com/example/controller/UserController.java", 15);
         controller.setId(3L);
         controller.setPackageName("com.example.controller");
         testNodes.add(controller);
         
         // Service Java layer
-        CodeNode serviceJava = new CodeNode("UserService", "CLASS", 
+        CodeNode serviceJava = new CodeNode(USER_SERVICE, TYPE_CLASS, 
             "/project/backend/src/main/java/com/example/service/UserService.java", 8);
         serviceJava.setId(4L);
         serviceJava.setPackageName("com.example.service");
@@ -91,19 +95,19 @@ class FlowGraphServiceTest {
         testRelationships = new ArrayList<>();
         
         // Component -> Service (HTTP call)
-        CodeRelationship rel1 = new CodeRelationship(1L, 2L, "CALLS");
+        CodeRelationship rel1 = new CodeRelationship(1L, 2L, REL_CALLS);
         rel1.setId(1L);
         rel1.setLineNumber(25);
         testRelationships.add(rel1);
         
         // Controller -> Service (DI)
-        CodeRelationship rel2 = new CodeRelationship(3L, 4L, "CALLS");
+        CodeRelationship rel2 = new CodeRelationship(3L, 4L, REL_CALLS);
         rel2.setId(2L);
         rel2.setLineNumber(20);
         testRelationships.add(rel2);
         
         // Service -> Repository (DI)
-        CodeRelationship rel3 = new CodeRelationship(4L, 5L, "CALLS");
+        CodeRelationship rel3 = new CodeRelationship(4L, 5L, REL_CALLS);
         rel3.setId(3L);
         rel3.setLineNumber(15);
         testRelationships.add(rel3);
@@ -116,7 +120,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_ReturnsCompleteGraph() {
+    void testBuildFlowGraphReturnsCompleteGraph() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(testNodes);
         when(relationshipRepository.findAll()).thenReturn(testRelationships);
@@ -140,7 +144,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_CorrectLayerDetection() {
+    void testBuildFlowGraphCorrectLayerDetection() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(testNodes);
         when(relationshipRepository.findAll()).thenReturn(testRelationships);
@@ -190,7 +194,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_CorrectEdgeTypes() {
+    void testBuildFlowGraphCorrectEdgeTypes() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(testNodes);
         when(relationshipRepository.findAll()).thenReturn(testRelationships);
@@ -214,7 +218,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraphFromNode_TracesConnectedNodes() {
+    void testBuildFlowGraphFromNodeTracesConnectedNodes() {
         // Arrange
         Long startNodeId = 3L; // Controller
         int maxDepth = 3;
@@ -260,7 +264,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraphFromNode_RespectsMaxDepth() {
+    void testBuildFlowGraphFromNodeRespectsMaxDepth() {
         // Arrange
         Long startNodeId = 3L;
         int maxDepth = 1;
@@ -287,7 +291,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraphForComponent_FindsComponent() {
+    void testBuildFlowGraphForComponentFindsComponent() {
         // Arrange
         String componentName = "UserList";
         CodeNode component = testNodes.get(0);
@@ -309,13 +313,13 @@ class FlowGraphServiceTest {
         
         // Assert
         assertNotNull(response);
-        assertTrue(response.getNodes().size() > 0);
+        assertFalse(response.getNodes().isEmpty());
         
         verify(nodeRepository).searchByName(componentName);
     }
     
     @Test
-    void testBuildFlowGraphForComponent_ComponentNotFound() {
+    void testBuildFlowGraphForComponentComponentNotFound() {
         // Arrange
         String componentName = "NonExistent";
         
@@ -336,7 +340,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_MetadataContainsLayerCounts() {
+    void testBuildFlowGraphMetadataContainsLayerCounts() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(testNodes);
         when(relationshipRepository.findAll()).thenReturn(testRelationships);
@@ -354,7 +358,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_MetadataContainsEdgeTypeCounts() {
+    void testBuildFlowGraphMetadataContainsEdgeTypeCounts() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(testNodes);
         when(relationshipRepository.findAll()).thenReturn(testRelationships);
@@ -372,7 +376,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_EmptyRepository() {
+    void testBuildFlowGraphEmptyRepository() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(Collections.emptyList());
         when(relationshipRepository.findAll()).thenReturn(Collections.emptyList());
@@ -389,7 +393,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_NodeIdConversion() {
+    void testBuildFlowGraphNodeIdConversion() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(Collections.singletonList(testNodes.get(0)));
         when(relationshipRepository.findAll()).thenReturn(Collections.emptyList());
@@ -403,7 +407,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_EdgeLabels() {
+    void testBuildFlowGraphEdgeLabels() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(testNodes);
         when(relationshipRepository.findAll()).thenReturn(testRelationships);
@@ -430,7 +434,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_PreservesLineNumbers() {
+    void testBuildFlowGraphPreservesLineNumbers() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(testNodes);
         when(relationshipRepository.findAll()).thenReturn(testRelationships);
@@ -456,7 +460,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_HandlesCircularReferences() {
+    void testBuildFlowGraphHandlesCircularReferences() {
         // Arrange
         CodeRelationship circular1 = new CodeRelationship(3L, 4L, "CALLS");
         circular1.setId(10L);
@@ -478,7 +482,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraphFromNode_HandlesIsolatedNode() {
+    void testBuildFlowGraphFromNodeHandlesIsolatedNode() {
         // Arrange
         Long isolatedNodeId = 1L;
         
@@ -496,7 +500,7 @@ class FlowGraphServiceTest {
     }
     
     @Test
-    void testBuildFlowGraph_LayersList() {
+    void testBuildFlowGraphLayersList() {
         // Arrange
         when(nodeRepository.findAll()).thenReturn(testNodes);
         when(relationshipRepository.findAll()).thenReturn(testRelationships);
@@ -510,7 +514,7 @@ class FlowGraphServiceTest {
         @SuppressWarnings("unchecked")
         List<String> layers = (List<String>) metadata.get("layers");
         assertNotNull(layers);
-        assertTrue(layers.size() > 0);
+        assertFalse(layers.isEmpty());
         
         // Should be sorted
         List<String> sortedLayers = new ArrayList<>(layers);

@@ -6,7 +6,6 @@ import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.*;
-import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.springframework.stereotype.Service;
 
@@ -14,8 +13,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class StatisticsService {
@@ -57,10 +57,13 @@ public class StatisticsService {
         int recordCount = 0;
         Set<String> packages = new HashSet<>();
 
-        var files = Files.walk(dir)
-            .filter(Files::isRegularFile)
-            .filter(p -> isCodeFile(p.toString()))
-            .collect(Collectors.toList());
+        List<Path> files;
+        try (Stream<Path> stream = Files.walk(dir)) {
+            files = stream
+                .filter(Files::isRegularFile)
+                .filter(p -> isCodeFile(p.toString()))
+                .toList();
+        }
 
         for (Path file : files) {
             CodeStatistics fileStats = calculateFileStatistics(file.toString());
@@ -73,8 +76,7 @@ public class StatisticsService {
             interfaceCount += fileStats.interfaceCount();
             recordCount += fileStats.recordCount();
             
-            // Extract package from Java files
-            if (getExtension(file.toString()).equals("java")) {
+            if ("java".equals(getExtension(file.toString()))) {
                 String pkg = extractPackageName(Files.readString(file));
                 if (!pkg.isEmpty()) {
                     packages.add(pkg);
@@ -97,12 +99,13 @@ public class StatisticsService {
 
     private CodeStatistics calculateJavaStatistics(String content) {
         ParseResult<CompilationUnit> result = javaParser.parse(content);
+        java.util.Optional<CompilationUnit> cuOpt = result.getResult();
         
-        if (!result.isSuccessful() || result.getResult().isEmpty()) {
+        if (!result.isSuccessful() || cuOpt.isEmpty()) {
             return calculateGenericStatistics(content);
         }
 
-        CompilationUnit cu = result.getResult().get();
+        CompilationUnit cu = cuOpt.get();
         
         // Count lines
         String[] lines = content.split("\n");
@@ -110,13 +113,13 @@ public class StatisticsService {
         
         // Get all comment ranges
         Set<Integer> commentLineNumbers = new HashSet<>();
-        cu.getAllComments().forEach(comment -> {
+        cu.getAllComments().forEach(comment -> 
             comment.getRange().ifPresent(range -> {
                 for (int i = range.begin.line; i <= range.end.line; i++) {
                     commentLineNumbers.add(i);
                 }
-            });
-        });
+            })
+        );
         
         // Count blank and code lines
         int blankLines = 0;
@@ -127,11 +130,8 @@ public class StatisticsService {
             
             if (line.isEmpty()) {
                 blankLines++;
-            } else if (!commentLineNumbers.contains(lineNum)) {
-                // Check if line starts with comment markers (for inline comments not caught by parser)
-                if (!line.startsWith("//") && !line.startsWith("/*") && !line.startsWith("*")) {
-                    codeLines++;
-                }
+            } else if (!commentLineNumbers.contains(lineNum) && !line.startsWith("//") && !line.startsWith("/*") && !line.startsWith("*")) {
+                codeLines++;
             }
         }
         
@@ -179,13 +179,10 @@ public class StatisticsService {
 
     private String extractPackageName(String content) {
         ParseResult<CompilationUnit> result = javaParser.parse(content);
-        if (result.isSuccessful() && result.getResult().isPresent()) {
-            CompilationUnit cu = result.getResult().get();
-            return cu.getPackageDeclaration()
-                .map(pd -> pd.getNameAsString())
-                .orElse("");
-        }
-        return "";
+        return result.getResult()
+            .flatMap(cu -> cu.getPackageDeclaration())
+            .map(pd -> pd.getNameAsString())
+            .orElse("");
     }
 
     private boolean isCodeFile(String path) {

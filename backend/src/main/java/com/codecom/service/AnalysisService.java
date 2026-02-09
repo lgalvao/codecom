@@ -14,13 +14,13 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,12 +30,23 @@ import java.util.stream.Stream;
 @Service
 public class AnalysisService {
 
+    private static final Logger log = LoggerFactory.getLogger(AnalysisService.class);
+
     private static final String TYPE_CLASS = "CLASS";
     private static final String TYPE_METHOD = "METHOD";
+    private static final String TYPE_INTERFACE = "INTERFACE";
 
     private static final String CAT_CORE = "CORE";
     private static final String CAT_BOILERPLATE = "BOILERPLATE";
     private static final String CAT_ARCHITECTURE = "ARCHITECTURE";
+
+    private static final String EXT_JAVA = "java";
+    private static final String DIR_NODE_MODULES = "node_modules";
+    private static final String DIR_TARGET = "target";
+    private static final String DIR_GIT = ".git";
+    
+    private static final String PARSE_WARNING = "Warning: Could not parse file ";
+    private static final String LOG_FORMAT = "{0}: {1}";
 
     private final JavaParser javaParser = new JavaParser();
 
@@ -44,7 +55,7 @@ public class AnalysisService {
         String extension = getExtension(path);
 
         return switch (extension) {
-            case "java" -> extractJavaSymbols(content);
+            case EXT_JAVA -> extractJavaSymbols(content);
             default -> new ArrayList<>();
         };
     }
@@ -116,10 +127,10 @@ public class AnalysisService {
         try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
             paths
                 .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".java"))
-                .filter(p -> !p.toString().contains("node_modules"))
-                .filter(p -> !p.toString().contains("target"))
-                .filter(p -> !p.toString().contains(".git"))
+                .filter(p -> p.toString().endsWith("." + EXT_JAVA))
+                .filter(p -> !p.toString().contains(DIR_NODE_MODULES))
+                .filter(p -> !p.toString().contains(DIR_TARGET))
+                .filter(p -> !p.toString().contains(DIR_GIT))
                 .forEach(path -> {
                     try {
                         List<SymbolInfo> symbols = getOutline(path.toString());
@@ -132,7 +143,7 @@ public class AnalysisService {
                             .forEach(results::add);
                     } catch (IOException e) {
                         // Log and skip files that can't be parsed
-                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
+                        log.warn(PARSE_WARNING + LOG_FORMAT, path, e.getMessage());
                     }
                 });
         }
@@ -162,16 +173,17 @@ public class AnalysisService {
         String content = Files.readString(Path.of(filePath));
         String extension = getExtension(filePath);
 
-        if (!"java".equals(extension)) {
+        if (!EXT_JAVA.equals(extension)) {
             return Optional.empty();
         }
 
         ParseResult<CompilationUnit> result = javaParser.parse(content);
-        if (!result.isSuccessful() || result.getResult().isEmpty()) {
+        java.util.Optional<CompilationUnit> cuOpt = result.getResult();
+        if (!result.isSuccessful() || cuOpt.isEmpty()) {
             return Optional.empty();
         }
 
-        CompilationUnit cu = result.getResult().get();
+        CompilationUnit cu = cuOpt.get();
         
         // Find method at the specified location
         Optional<MethodDeclaration> method = cu.findAll(MethodDeclaration.class).stream()
@@ -212,7 +224,7 @@ public class AnalysisService {
         return new SymbolDefinition(
             method.getNameAsString(),
             signature,
-            "METHOD",
+            TYPE_METHOD,
             returnType,
             parameters,
             documentation,
@@ -223,7 +235,7 @@ public class AnalysisService {
     }
 
     private SymbolDefinition buildClassDefinition(ClassOrInterfaceDeclaration classDecl, String filePath) {
-        String type = classDecl.isInterface() ? "INTERFACE" : "CLASS";
+        String type = classDecl.isInterface() ? TYPE_INTERFACE : TYPE_CLASS;
         
         // Build signature manually
         StringBuilder signature = new StringBuilder();
@@ -261,43 +273,40 @@ public class AnalysisService {
      * @return String containing up to 10 lines of code
      */
     private String extractCodePreview(Node node, String filePath) {
-        try {
-            if (!node.getRange().isPresent()) {
+        return node.getRange().map(range -> {
+            try {
+                String content = Files.readString(Path.of(filePath));
+                String[] lines = content.split("\n");
+                
+                int startLine = range.begin.line - 1; // 0-based index
+                int endLine = Math.min(startLine + 10, lines.length); // Max 10 lines
+                
+                StringBuilder preview = new StringBuilder();
+                for (int i = startLine; i < endLine; i++) {
+                    preview.append(lines[i]);
+                    if (i < endLine - 1) {
+                        preview.append("\n");
+                    }
+                }
+                
+                String result = preview.toString();
+                
+                // If we're showing less than the full node, add an indicator
+                if (endLine < range.end.line) {
+                    result += "\n...";
+                }
+                
+                return result;
+            } catch (IOException _) {
                 return null;
             }
-            
-            String content = Files.readString(Path.of(filePath));
-            String[] lines = content.split("\n");
-            
-            int startLine = node.getRange().get().begin.line - 1; // 0-based index
-            int endLine = Math.min(startLine + 10, lines.length); // Max 10 lines
-            
-            StringBuilder preview = new StringBuilder();
-            for (int i = startLine; i < endLine; i++) {
-                preview.append(lines[i]);
-                if (i < endLine - 1) {
-                    preview.append("\n");
-                }
-            }
-            
-            String result = preview.toString();
-            
-            // If we're showing less than the full node, add an indicator
-            if (node.getRange().isPresent() && 
-                endLine < node.getRange().get().end.line) {
-                result += "\n...";
-            }
-            
-            return result;
-        } catch (IOException e) {
-            return null;
-        }
+        }).orElse(null);
     }
 
     private String extractJavadoc(Node node) {
         Optional<JavadocComment> javadoc = node.getComment()
-            .filter(c -> c instanceof JavadocComment)
-            .map(c -> (JavadocComment) c);
+            .filter(JavadocComment.class::isInstance)
+            .map(JavadocComment.class::cast);
 
         if (javadoc.isPresent()) {
             String content = javadoc.get().getContent();
@@ -324,90 +333,17 @@ public class AnalysisService {
         List<CallerInfo> callers = new ArrayList<>();
         Map<String, Integer> callerCounts = new HashMap<>();
         
-        // Walk the file tree and search Java files
         try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
             paths
                 .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".java"))
-                .filter(p -> !p.toString().contains("node_modules"))
-                .filter(p -> !p.toString().contains("target"))
-                .filter(p -> !p.toString().contains(".git"))
-                .forEach(path -> {
-                    try {
-                        String content = Files.readString(path);
-                        ParseResult<CompilationUnit> result = javaParser.parse(content);
-                        
-                        if (result.isSuccessful() && result.getResult().isPresent()) {
-                            CompilationUnit cu = result.getResult().get();
-                            
-                            // Find method calls in this file
-                            cu.accept(new VoidVisitorAdapter<Void>() {
-                                private String currentClassName = "";
-                                private String currentMethodName = "";
-                                private int currentMethodLine = 0;
-                                
-                                @Override
-                                public void visit(ClassOrInterfaceDeclaration n, Void arg) {
-                                    currentClassName = n.getNameAsString();
-                                    super.visit(n, arg);
-                                }
-                                
-                                @Override
-                                public void visit(MethodDeclaration n, Void arg) {
-                                    currentMethodName = n.getNameAsString();
-                                    currentMethodLine = n.getRange().map(r -> r.begin.line).orElse(0);
-                                    super.visit(n, arg);
-                                }
-                                
-                                @Override
-                                public void visit(MethodCallExpr n, Void arg) {
-                                    String calledMethod = n.getNameAsString();
-                                    
-                                    // Check if this is the target method
-                                    if (calledMethod.equals(targetMethodName)) {
-                                        // If targetClassName is specified, we could do more sophisticated checking
-                                        // For now, we'll match by method name only
-                                        
-                                        String callerKey = path.toString() + ":" + currentClassName + "." + currentMethodName;
-                                        callerCounts.put(callerKey, callerCounts.getOrDefault(callerKey, 0) + 1);
-                                    }
-                                    
-                                    super.visit(n, arg);
-                                }
-                            }, null);
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
-                    }
-                });
+                .filter(p -> p.toString().endsWith("." + EXT_JAVA))
+                .filter(p -> !p.toString().contains(DIR_NODE_MODULES))
+                .filter(p -> !p.toString().contains(DIR_TARGET))
+                .filter(p -> !p.toString().contains(DIR_GIT))
+                .forEach(path -> processFileForCallers(path, targetMethodName, callerCounts));
         }
         
-        // Convert map to CallerInfo list
-        callerCounts.forEach((key, count) -> {
-            String[] parts = key.split(":");
-            String filePath = parts[0];
-            String[] methodParts = parts[1].split("\\.");
-            String className = methodParts.length > 1 ? methodParts[0] : "";
-            String methodName = methodParts.length > 1 ? methodParts[1] : methodParts[0];
-            
-            // Get line number by re-parsing the file (could be optimized)
-            try {
-                String content = Files.readString(Path.of(filePath));
-                ParseResult<CompilationUnit> result = javaParser.parse(content);
-                if (result.isSuccessful() && result.getResult().isPresent()) {
-                    CompilationUnit cu = result.getResult().get();
-                    Optional<MethodDeclaration> method = cu.findAll(MethodDeclaration.class).stream()
-                        .filter(m -> m.getNameAsString().equals(methodName))
-                        .findFirst();
-                    
-                    int line = method.map(m -> m.getRange().map(r -> r.begin.line).orElse(0)).orElse(0);
-                    callers.add(new CallerInfo(methodName, className, filePath, line, count));
-                }
-            } catch (IOException e) {
-                // Skip if we can't re-parse
-                callers.add(new CallerInfo(methodName, className, filePath, 0, count));
-            }
-        });
+        convertCountsToCallerInfo(callerCounts, callers);
         
         int totalCallSites = callers.stream().mapToInt(CallerInfo::callCount).sum();
         
@@ -420,6 +356,65 @@ public class AnalysisService {
         );
     }
 
+    private void processFileForCallers(Path path, String targetMethodName, Map<String, Integer> callerCounts) {
+        try {
+            String content = Files.readString(path);
+            ParseResult<CompilationUnit> result = javaParser.parse(content);
+            result.getResult().ifPresent(cu -> cu.accept(new VoidVisitorAdapter<Void>() {
+                private String currentClassName = "";
+                private String currentMethodName = "";
+                
+                @Override
+                public void visit(ClassOrInterfaceDeclaration n, Void arg) {
+                    currentClassName = n.getNameAsString();
+                    super.visit(n, arg);
+                }
+                
+                @Override
+                public void visit(MethodDeclaration n, Void arg) {
+                    currentMethodName = n.getNameAsString();
+                    super.visit(n, arg);
+                }
+                
+                @Override
+                public void visit(MethodCallExpr n, Void arg) {
+                    if (n.getNameAsString().equals(targetMethodName)) {
+                        String callerKey = path.toString() + ":" + currentClassName + "." + currentMethodName;
+                        callerCounts.put(callerKey, callerCounts.getOrDefault(callerKey, 0) + 1);
+                    }
+                    super.visit(n, arg);
+                }
+            }, null));
+        } catch (IOException e) {
+            log.warn(PARSE_WARNING + LOG_FORMAT, path, e.getMessage());
+        }
+    }
+
+    private void convertCountsToCallerInfo(Map<String, Integer> callerCounts, List<CallerInfo> callers) {
+        callerCounts.forEach((key, count) -> {
+            String[] parts = key.split(":");
+            String filePath = parts[0];
+            String[] methodParts = parts[1].split("\\.");
+            String className = methodParts.length > 1 ? methodParts[0] : "";
+            String methodName = methodParts.length > 1 ? methodParts[1] : methodParts[0];
+            
+            try {
+                String content = Files.readString(Path.of(filePath));
+                ParseResult<CompilationUnit> result = javaParser.parse(content);
+                result.getResult().flatMap(cu -> cu.findAll(MethodDeclaration.class).stream()
+                    .filter(m -> m.getNameAsString().equals(methodName))
+                    .findFirst())
+                    .ifPresentOrElse(
+                        m -> callers.add(new CallerInfo(methodName, className, filePath, 
+                            m.getRange().map(r -> r.begin.line).orElse(0), count)),
+                        () -> callers.add(new CallerInfo(methodName, className, filePath, 0, count))
+                    );
+            } catch (IOException _) {
+                callers.add(new CallerInfo(methodName, className, filePath, 0, count));
+            }
+        });
+    }
+
     /**
      * Find test files that reference a specific class
      * @param rootPath The root directory to search
@@ -429,210 +424,182 @@ public class AnalysisService {
     public List<TestReference> findTestReferences(String rootPath, String targetClassName) throws IOException {
         List<TestReference> references = new ArrayList<>();
         
-        // Walk the file tree and search test files
         try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
             paths
                 .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".java"))
-                .filter(p -> p.toString().contains("test") || p.toString().contains("Test"))
-                .filter(p -> !p.toString().contains("node_modules"))
-                .filter(p -> !p.toString().contains(".git"))
-                .forEach(path -> {
-                    try {
-                        String content = Files.readString(path);
-                        List<Integer> referenceLines = new ArrayList<>();
-                        
-                        // Simple text-based search for the class name
-                        String[] lines = content.split("\n");
-                        for (int i = 0; i < lines.length; i++) {
-                            if (lines[i].contains(targetClassName)) {
-                                referenceLines.add(i + 1); // 1-based line numbers
-                            }
-                        }
-                        
-                        if (!referenceLines.isEmpty()) {
-                            // Extract test class name from file
-                            ParseResult<CompilationUnit> result = javaParser.parse(content);
-                            String testClassName = path.getFileName().toString().replace(".java", "");
-                            
-                            if (result.isSuccessful() && result.getResult().isPresent()) {
-                                CompilationUnit cu = result.getResult().get();
-                                Optional<ClassOrInterfaceDeclaration> classDecl = cu.findFirst(ClassOrInterfaceDeclaration.class);
-                                if (classDecl.isPresent()) {
-                                    testClassName = classDecl.get().getNameAsString();
-                                }
-                            }
-                            
-                            references.add(new TestReference(
-                                testClassName,
-                                path.toString(),
-                                referenceLines.size(),
-                                referenceLines
-                            ));
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
-                    }
-                });
+                .filter(p -> p.toString().endsWith("." + EXT_JAVA))
+                .filter(p -> p.toString().toLowerCase().contains("test"))
+                .filter(p -> !p.toString().contains(DIR_NODE_MODULES))
+                .filter(p -> !p.toString().contains(DIR_GIT))
+                .forEach(path -> processTestFile(path, targetClassName, references));
         }
         
         return references;
     }
 
-    /**
-     * Detect potentially dead code (methods with zero internal callers)
-     * FR.37: Dead Code Detection & Visualization
-     * 
-     * @param rootPath The root directory to analyze
-     * @return List of potentially dead methods and classes
-     */
-    public List<DeadCodeInfo> detectDeadCode(String rootPath) throws IOException {
-        List<DeadCodeInfo> deadCode = new ArrayList<>();
-        
-        // Step 1: Collect all methods in the project
-        Map<String, MethodInfo> allMethods = new HashMap<>();
-        
-        try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
-            paths
-                .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".java"))
-                .filter(p -> !p.toString().contains("node_modules"))
-                .filter(p -> !p.toString().contains("target"))
-                .filter(p -> !p.toString().contains(".git"))
-                .forEach(path -> {
-                    try {
-                        String content = Files.readString(path);
-                        ParseResult<CompilationUnit> result = javaParser.parse(content);
-                        
-                        if (result.isSuccessful() && result.getResult().isPresent()) {
-                            CompilationUnit cu = result.getResult().get();
-                            boolean isTestFile = path.toString().contains("test") || path.toString().contains("Test");
-                            
-                            // Find all methods
-                            cu.accept(new VoidVisitorAdapter<Void>() {
-                                private String currentClassName = "";
-                                
-                                @Override
-                                public void visit(ClassOrInterfaceDeclaration n, Void arg) {
-                                    currentClassName = n.getNameAsString();
-                                    super.visit(n, arg);
-                                }
-                                
-                                @Override
-                                public void visit(MethodDeclaration n, Void arg) {
-                                    String methodName = n.getNameAsString();
-                                    boolean isPublic = n.isPublic();
-                                    int line = n.getRange().map(r -> r.begin.line).orElse(0);
-                                    
-                                    String key = currentClassName + "." + methodName;
-                                    allMethods.put(key, new MethodInfo(
-                                        methodName,
-                                        currentClassName,
-                                        path.toString(),
-                                        line,
-                                        isPublic,
-                                        isTestFile
-                                    ));
-                                    
-                                    super.visit(n, arg);
-                                }
-                            }, null);
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
-                    }
-                });
-        }
-        
-        // Step 2: Find all method calls in the project
-        Map<String, Integer> callCounts = new HashMap<>();
-        
-        try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
-            paths
-                .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".java"))
-                .filter(p -> !p.toString().contains("node_modules"))
-                .filter(p -> !p.toString().contains("target"))
-                .filter(p -> !p.toString().contains(".git"))
-                .forEach(path -> {
-                    try {
-                        String content = Files.readString(path);
-                        ParseResult<CompilationUnit> result = javaParser.parse(content);
-                        
-                        if (result.isSuccessful() && result.getResult().isPresent()) {
-                            CompilationUnit cu = result.getResult().get();
-                            
-                            // Find all method calls
-                            cu.accept(new VoidVisitorAdapter<Void>() {
-                                private String currentClassName = "";
-                                
-                                @Override
-                                public void visit(ClassOrInterfaceDeclaration n, Void arg) {
-                                    currentClassName = n.getNameAsString();
-                                    super.visit(n, arg);
-                                }
-                                
-                                @Override
-                                public void visit(MethodCallExpr n, Void arg) {
-                                    String methodName = n.getNameAsString();
-                                    
-                                    // Try to match with known methods
-                                    // Simple heuristic: match by method name within the same class first
-                                    String sameClassKey = currentClassName + "." + methodName;
-                                    if (allMethods.containsKey(sameClassKey)) {
-                                        callCounts.put(sameClassKey, callCounts.getOrDefault(sameClassKey, 0) + 1);
-                                    } else {
-                                        // Try to match by method name across all classes
-                                        for (String key : allMethods.keySet()) {
-                                            if (key.endsWith("." + methodName)) {
-                                                callCounts.put(key, callCounts.getOrDefault(key, 0) + 1);
-                                            }
-                                        }
-                                    }
-                                    
-                                    super.visit(n, arg);
-                                }
-                            }, null);
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Warning: Could not parse file " + path + ": " + e.getMessage());
-                    }
-                });
-        }
-        
-        // Step 3: Identify methods with zero callers
-        for (Map.Entry<String, MethodInfo> entry : allMethods.entrySet()) {
-            String key = entry.getKey();
-            MethodInfo method = entry.getValue();
-            int callerCount = callCounts.getOrDefault(key, 0);
+    private void processTestFile(Path path, String targetClassName, List<TestReference> references) {
+        try {
+            String content = Files.readString(path);
+            List<Integer> referenceLines = new ArrayList<>();
             
-            // Mark as potentially dead if it has zero callers
+            String[] lines = content.split("\n");
+            for (int i = 0; i < lines.length; i++) {
+                if (lines[i].contains(targetClassName)) {
+                    referenceLines.add(i + 1);
+                }
+            }
+            
+            if (!referenceLines.isEmpty()) {
+                String testClassName = extractTestClassName(path, content);
+                references.add(new TestReference(testClassName, path.toString(), referenceLines.size(), referenceLines));
+            }
+        } catch (IOException e) {
+            log.warn(PARSE_WARNING + LOG_FORMAT, path, e.getMessage());
+        }
+    }
+
+    private String extractTestClassName(Path path, String content) {
+        String testClassName = path.getFileName().toString().replace("." + EXT_JAVA, "");
+        ParseResult<CompilationUnit> result = javaParser.parse(content);
+        return result.getResult()
+            .flatMap(cu -> cu.findFirst(ClassOrInterfaceDeclaration.class))
+            .map(ClassOrInterfaceDeclaration::getNameAsString)
+            .orElse(testClassName);
+    }
+
+    public List<DeadCodeInfo> detectDeadCode(String rootPath) throws IOException {
+        Map<String, MethodInfo> allMethods = collectAllMethods(rootPath);
+        Map<String, Integer> callCounts = collectCallCounts(rootPath, allMethods);
+        
+        List<DeadCodeInfo> deadCode = new ArrayList<>();
+        for (Map.Entry<String, MethodInfo> entry : allMethods.entrySet()) {
+            MethodInfo method = entry.getValue();
+            int callerCount = callCounts.getOrDefault(entry.getKey(), 0);
+            
             if (callerCount == 0) {
-                String reason = method.isPublic ? "No internal callers (may be part of public API)" :
-                               method.isTest ? "No internal callers (test method)" :
-                               "No internal callers detected";
-                
-                deadCode.add(new DeadCodeInfo(
-                    method.name,
-                    "METHOD",
-                    method.className,
-                    method.filePath,
-                    method.line,
-                    callerCount,
-                    method.isPublic,
-                    method.isTest,
-                    reason
-                ));
+                deadCode.add(buildDeadCodeInfo(method, callerCount));
             }
         }
         
-        // Sort by file path and line number
         deadCode.sort((a, b) -> {
             int fileCompare = a.filePath().compareTo(b.filePath());
             return fileCompare != 0 ? fileCompare : Integer.compare(a.line(), b.line());
         });
         
         return deadCode;
+    }
+
+    private Map<String, MethodInfo> collectAllMethods(String rootPath) throws IOException {
+        Map<String, MethodInfo> allMethods = new HashMap<>();
+        try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
+            paths
+                .filter(Files::isRegularFile)
+                .filter(p -> p.toString().endsWith("." + EXT_JAVA))
+                .filter(p -> !p.toString().contains(DIR_NODE_MODULES))
+                .filter(p -> !p.toString().contains(DIR_TARGET))
+                .filter(p -> !p.toString().contains(DIR_GIT))
+                .forEach(path -> {
+                    try {
+                        String content = Files.readString(path);
+                        javaParser.parse(content).getResult().ifPresent(cu -> {
+                            boolean isTestFile = path.toString().toLowerCase().contains("test");
+                            cu.accept(new VoidVisitorAdapter<Void>() {
+                                private String currentClassName = "";
+                                @Override
+                                public void visit(ClassOrInterfaceDeclaration n, Void arg) {
+                                    currentClassName = n.getNameAsString();
+                                    super.visit(n, arg);
+                                }
+                                @Override
+                                public void visit(MethodDeclaration n, Void arg) {
+                                    String key = currentClassName + "." + n.getNameAsString();
+                                    allMethods.put(key, new MethodInfo(n.getNameAsString(), currentClassName, 
+                                        path.toString(), n.getRange().map(r -> r.begin.line).orElse(0), 
+                                        n.isPublic(), isTestFile));
+                                    super.visit(n, arg);
+                                }
+                            }, null);
+                        });
+                    } catch (IOException e) {
+                        log.warn(PARSE_WARNING + LOG_FORMAT, path, e.getMessage());
+                    }
+                });
+        }
+        return allMethods;
+    }
+
+    private Map<String, Integer> collectCallCounts(String rootPath, Map<String, MethodInfo> allMethods) throws IOException {
+        Map<String, Integer> callCounts = new HashMap<>();
+        try (Stream<Path> paths = Files.walk(Path.of(rootPath))) {
+            paths
+                .filter(Files::isRegularFile)
+                .filter(p -> p.toString().endsWith("." + EXT_JAVA))
+                .filter(p -> !p.toString().contains(DIR_NODE_MODULES))
+                .filter(p -> !p.toString().contains(DIR_TARGET))
+                .filter(p -> !p.toString().contains(DIR_GIT))
+                .forEach(path -> processFileForCallCounts(path, allMethods, callCounts));
+        }
+        return callCounts;
+    }
+
+    private void processFileForCallCounts(Path path, Map<String, MethodInfo> allMethods, Map<String, Integer> callCounts) {
+        try {
+            String content = Files.readString(path);
+            javaParser.parse(content).getResult().ifPresent(cu -> cu.accept(new VoidVisitorAdapter<Void>() {
+                private String currentClassName = "";
+                @Override
+                public void visit(ClassOrInterfaceDeclaration n, Void arg) {
+                    currentClassName = n.getNameAsString();
+                    super.visit(n, arg);
+                }
+                @Override
+                public void visit(MethodCallExpr n, Void arg) {
+                    processMethodCall(n.getNameAsString(), currentClassName, allMethods, callCounts);
+                    super.visit(n, arg);
+                }
+            }, null));
+        } catch (IOException e) {
+            log.warn(PARSE_WARNING + LOG_FORMAT, path, e.getMessage());
+        }
+    }
+
+    private void processMethodCall(String methodName, String currentClassName, Map<String, MethodInfo> allMethods, Map<String, Integer> callCounts) {
+        // Try to match with known methods
+        // Simple heuristic: match by method name within the same class first
+        String sameClassKey = currentClassName + "." + methodName;
+        if (allMethods.containsKey(sameClassKey)) {
+            callCounts.put(sameClassKey, callCounts.getOrDefault(sameClassKey, 0) + 1);
+        } else {
+            // Try to match by method name across all classes
+            for (String key : allMethods.keySet()) {
+                if (key.endsWith("." + methodName)) {
+                    callCounts.put(key, callCounts.getOrDefault(key, 0) + 1);
+                }
+            }
+        }
+    }
+
+    private DeadCodeInfo buildDeadCodeInfo(MethodInfo method, int callerCount) {
+        String reason;
+        if (method.isPublic) {
+            reason = "No internal callers (may be part of public API)";
+        } else if (method.isTest) {
+            reason = "No internal callers (test method)";
+        } else {
+            reason = "No internal callers detected";
+        }
+        
+        return new DeadCodeInfo(
+            method.name,
+            TYPE_METHOD,
+            method.className,
+            method.filePath,
+            method.line,
+            callerCount,
+            method.isPublic,
+            method.isTest,
+            reason
+        );
     }
     
     /**
