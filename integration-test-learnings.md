@@ -366,14 +366,27 @@ void testCreateSlice_DuplicateName_ReturnsBadRequest() { }
 **Solutions**:
 - Set `spring.jpa.defer-datasource-initialization=true` in test properties
 - This ensures Hibernate creates tables before Spring runs SQL scripts
-- For FeatureSlice, let JPA handle timestamps via @PrePersist
+- For FeatureSlice, must insert timestamps with CURRENT_TIMESTAMP in SQL since @PrePersist doesn't run
+- Use unique names (with timestamp) in tests to avoid conflicts
+- Use `@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)` for tests that modify data
+
+**Unresolved Issues**:
+1. **Hibernate ID Sequence Not Reset**: When inserting seed data with explicit IDs, Hibernate's sequence doesn't advance. New entities created by the service try to use ID=1 which conflicts with seed data.
+   - Attempted solution: ALTER SEQUENCE commands in SQL (failed - sequence names incorrect for H2)
+   - Workaround: Use high ID values in seed data (100+) and create new entities in tests
+   - Better solution needed: Reset sequences after seed data OR don't use explicit IDs
+
+2. **Cascade Delete Constraint Violation**: Deleting FeatureSlice with nodes in join table causes constraint violation
+   - Root cause: Join table (feature_slice_nodes) not properly cleaned up
+   - Expected: @ManyToMany cascade should handle this automatically
+   - Actual: H2 throws integrity constraint violation
+   - Workaround: Create slices without nodes for delete tests
+   - Needs investigation: Cascade settings in entity relationship
 
 **Next Steps**:
-- Fix seed data for FeatureSlice timestamps
-- Get first integration test passing
-- Create more integration tests for other controllers
-
----
+- Continue with more integration tests
+- Investigate and fix the 2 TODO tests in follow-up session
+- Document all learnings for team reference---
 
 ## Resources
 
