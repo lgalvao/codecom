@@ -66,6 +66,8 @@ const isDimmed = () => {
         'text-primary fw-bold': node.isDirectory && isOpen,
         'dimmed-node': isDimmed()
       }"
+      :data-testid="node.isDirectory ? 'folder-node' : 'file-node'"
+      :data-path="node.path"
     >
       <span v-if="node.isDirectory" class="me-1 d-flex align-items-center" style="width: 14px;">
         <ChevronDown v-if="isOpen" :size="12" />

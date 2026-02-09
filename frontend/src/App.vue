@@ -547,8 +547,8 @@ onMounted(() => {
 
 <template>
   <div class="h-100 d-flex flex-column">
-    <BNavbar toggleable="lg" :type="theme" :variant="theme" class="px-3 border-bottom border-secondary">
-      <BNavbarBrand href="#" :class="theme === 'dark' ? 'text-white' : 'text-dark'">
+    <BNavbar toggleable="lg" :type="theme" :variant="theme" class="px-3 border-bottom border-secondary" data-testid="navbar">
+      <BNavbarBrand href="#" :class="theme === 'dark' ? 'text-white' : 'text-dark'" data-testid="app-title">
         <Code class="me-2" />
         CodeCom
       </BNavbarBrand>
@@ -562,6 +562,7 @@ onMounted(() => {
           size="sm" 
           :class="theme === 'dark' ? 'bg-dark text-white border-secondary' : 'bg-light text-dark border-secondary'" 
           style="width: 150px;" 
+          data-testid="lod-select"
         />
         
         <BButton 
@@ -569,6 +570,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showSearchPanel }]" 
           @click="toggleSearchPanel"
           title="Symbol Search (Ctrl+Shift+F)"
+          data-testid="search-button"
         >
           <SearchIcon :size="20" />
         </BButton>
@@ -578,6 +580,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showStatsPanel }]" 
           @click="toggleStatsPanel"
           title="Statistics"
+          data-testid="stats-button"
         >
           <BarChart3 :size="20" />
         </BButton>
@@ -587,6 +590,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showDetailPanel }]" 
           @click="toggleDetailPanel"
           title="Detail Control"
+          data-testid="detail-button"
         >
           <Sliders :size="20" />
         </BButton>
@@ -606,6 +610,7 @@ onMounted(() => {
           @click="toggleExportPanel"
           title="Export Code"
           :disabled="!selectedFile"
+          data-testid="export-button"
         >
           <Download :size="20" />
         </BButton>
@@ -615,6 +620,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': clickNavigationMode }]" 
           @click="toggleClickNavigationMode"
           title="Click Navigation Mode (when enabled, click on symbols to navigate)"
+          data-testid="click-nav-button"
         >
           <MousePointer2 :size="20" />
         </BButton>
@@ -647,7 +653,7 @@ onMounted(() => {
           <GitBranch :size="20" />
         </BButton>
         
-        <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
+        <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme" data-testid="theme-toggle">
           <Sun v-if="theme === 'dark'" :size="20" />
           <Moon v-else :size="20" />
         </BButton>
@@ -656,7 +662,7 @@ onMounted(() => {
 
     <div class="flex-grow-1 d-flex overflow-hidden">
       <!-- Sidebar -->
-      <div class="sidebar border-end d-flex flex-column" style="width: 260px; background-color: var(--sidebar-bg);">
+      <div class="sidebar border-end d-flex flex-column" style="width: 260px; background-color: var(--sidebar-bg);" data-testid="file-explorer">
         <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
             <FolderOpen :size="18" class="me-2" />
@@ -677,7 +683,8 @@ onMounted(() => {
             v-else 
             :node="fileTree" 
             :slice-files="activeSliceFiles"
-            @select="handleFileSelect" 
+            @select="handleFileSelect"
+            data-testid="file-tree"
           />
         </div>
         
@@ -699,16 +706,18 @@ onMounted(() => {
             @select="handleTabSelect"
             @close="handleTabClose"
             style="flex: 1;"
+            data-testid="tab-manager"
           />
           <div v-if="selectedFile" class="px-2 border-start">
             <PackageNavigation 
               :current-file="selectedFile"
               @navigate="handlePackageNavigate"
+              data-testid="package-navigation"
             />
           </div>
         </div>
         <div class="flex-grow-1 p-0 overflow-hidden editor-bg position-relative d-flex">
-          <div v-if="!selectedFile" class="welcome-screen d-flex flex-column align-items-center justify-content-center w-100 p-5">
+          <div v-if="!selectedFile" class="welcome-screen d-flex flex-column align-items-center justify-content-center w-100 p-5" data-testid="welcome-screen">
             <Code :size="64" class="text-muted mb-4 opacity-25" />
             <h2 class="display-6 fw-bold">CodeCom</h2>
             <p class="text-muted lead">Smart code comprehension with Level of Detail toggles</p>
@@ -729,6 +738,7 @@ onMounted(() => {
                  :dead-code-lines="deadCodeLines"
                  :click-navigation-mode="clickNavigationMode"
                  @navigate-to-symbol="handleNavigateToSymbol"
+                 data-testid="code-highlighter"
                />
                <CodeMiniMap 
                  :symbols="symbols"
@@ -769,6 +779,7 @@ onMounted(() => {
         ref="statsComponent"
         :path="selectedFile.path"
         :is-directory="false"
+        data-testid="code-statistics"
       />
       <div v-else class="text-muted text-center p-3">
         Select a file to view statistics
@@ -781,7 +792,7 @@ onMounted(() => {
       placement="end"
       title="Detail Control"
     >
-      <DetailControlPanel @change="handleDetailChange" />
+      <DetailControlPanel @change="handleDetailChange" data-testid="detail-control-panel" />
     </BOffcanvas>
 
     <!-- Symbol Search Panel -->
@@ -796,6 +807,7 @@ onMounted(() => {
         :visible="showSearchPanel"
         @select="handleSearchSelect"
         @close="showSearchPanel = false"
+        data-testid="symbol-search"
       />
     </BOffcanvas>
 
@@ -825,6 +837,7 @@ onMounted(() => {
         :filename="selectedFile.name"
         :language="getLanguageFromFilename(selectedFile.name)"
         @close="showExportPanel = false"
+        data-testid="export-dialog"
       />
       <div v-else class="text-muted text-center p-3">
         Select a file to export
