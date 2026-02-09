@@ -347,21 +347,31 @@ void testCreateSlice_DuplicateName_ReturnsBadRequest() { }
 - Created integration test infrastructure plan
 - Established test data strategy
 - Set up tracking and learnings documents
+- Created test-seed.sql with sample CodeNode/CodeRelationship data
+- Created BaseIntegrationTest class
+- Created KnowledgeGraphIntegrationTest
 
 **Key Decisions**:
 - Use H2 in-memory database for speed
 - Adapt seed data to actual CodeCom entities
 - Target 80% endpoint coverage
-- Use both MockMvc and TestRestTemplate
+- Use RestTemplate for integration tests
 
 **Challenges**:
 - Problem statement referenced entities from different project
 - Resolved by analyzing actual codebase entities
+- SQL seed data loading required `spring.jpa.defer-datasource-initialization=true`
+- FeatureSlice entity uses `@PrePersist` for timestamps, so can't insert timestamps directly
+
+**Solutions**:
+- Set `spring.jpa.defer-datasource-initialization=true` in test properties
+- This ensures Hibernate creates tables before Spring runs SQL scripts
+- For FeatureSlice, let JPA handle timestamps via @PrePersist
 
 **Next Steps**:
-- Implement Phase 1: Infrastructure setup
-- Create test-seed.sql with sample CodeNode/CodeRelationship data
-- Build base integration test class
+- Fix seed data for FeatureSlice timestamps
+- Get first integration test passing
+- Create more integration tests for other controllers
 
 ---
 
