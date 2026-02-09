@@ -14,25 +14,29 @@ See [integration-test-learnings.md](./integration-test-learnings.md) for insight
 
 | Phase | Status | Tests Created | Tests Passing | Completion |
 |-------|--------|---------------|---------------|------------|
-| Phase 1: Infrastructure | ⏳ Not Started | 0 | 0 | 0% |
+| Phase 1: Infrastructure | ✅ Complete | N/A | N/A | 100% |
 | Phase 2: Core API | ⏳ Not Started | 0 | 0 | 0% |
-| Phase 3: Graph & Slicing | ⏳ Not Started | 0 | 0 | 0% |
+| Phase 3: Graph & Slicing | 🟢 In Progress | 9 | 9 | 33% |
 | Phase 4: Advanced Features | ⏳ Not Started | 0 | 0 | 0% |
 | Phase 5: Verification | ⏳ Not Started | 0 | 0 | 0% |
-| **TOTAL** | **⏳** | **0** | **0** | **0%** |
+| **TOTAL** | **🟢** | **9** | **9** | **18%** |
 
 ## Detailed Progress
 
 ### Phase 1: Infrastructure Setup
-**Status**: ⏳ Not Started
+**Status**: ✅ Complete
 
-- [ ] Create `application-test.properties` configuration
-- [ ] Create `test-seed.sql` with sample data
-- [ ] Create base `BaseIntegrationTest` class
-- [ ] Configure H2 test database
-- [ ] Verify test infrastructure works
+- [x] Create `application-test.properties` configuration
+- [x] Create `test-seed.sql` with sample data
+- [x] Create base `BaseIntegrationTest` class
+- [x] Configure H2 test database
+- [x] Verify test infrastructure works
 
-**Notes**: Foundation for all integration tests
+**Notes**: 
+- Foundation successfully established
+- H2 in-memory database configured with deferred initialization
+- Seed data includes CodeNode, CodeRelationship, and FeatureSlice entities
+- Base test class provides RestTemplate and port configuration
 
 ---
 
@@ -68,20 +72,26 @@ See [integration-test-learnings.md](./integration-test-learnings.md) for insight
 ---
 
 ### Phase 3: Graph & Slicing Tests
-**Status**: ⏳ Not Started
+**Status**: 🟢 In Progress
 
 #### KnowledgeGraphController (`/api/knowledge-graph`)
-- [ ] Test `POST /api/knowledge-graph/index` - Index file
-- [ ] Test `GET /api/knowledge-graph/nodes` - List nodes
-- [ ] Test `GET /api/knowledge-graph/relationships` - List relationships
-- [ ] Test `GET /api/knowledge-graph/query/calls` - Query calls
-- [ ] Test `GET /api/knowledge-graph/query/inherits` - Query inheritance
-- [ ] Test `GET /api/knowledge-graph/query/callers` - Get callers
-- [ ] Test `DELETE /api/knowledge-graph/clear` - Clear graph
-- [ ] Test `GET /api/knowledge-graph/stats` - Get stats
-- [ ] Test relationship integrity
+- [x] Test `POST /api/knowledge-graph/index` - Index file
+- [x] Test `GET /api/knowledge-graph/node/{id}` - Get node with relationships
+- [x] Test `GET /api/knowledge-graph/calls/{nodeId}` - Get callees
+- [x] Test `GET /api/knowledge-graph/callers/{nodeId}` - Get callers
+- [x] Test `GET /api/knowledge-graph/inherits/{nodeId}` - Get inheritance
+- [x] Test `GET /api/knowledge-graph/query` - Execute queries
+- [x] Test `GET /api/knowledge-graph/search` - Search nodes
+- [x] Test error scenarios (404 for non-existent nodes)
+- [x] Test database seeding
 
-**Tests Created**: 0 | **Passing**: 0
+**Tests Created**: 9 | **Passing**: 9 ✅
+
+**Notes**: 
+- Full integration test coverage for KnowledgeGraphController
+- Tests verify REST API → Service → Repository → Database flow
+- Seed data properly loaded with 20+ CodeNodes and 15+ relationships
+- All 9 tests passing consistently
 
 #### FeatureSliceController (`/api/feature-slices`)
 - [ ] Test `GET /api/feature-slices` - List slices
@@ -144,10 +154,10 @@ See [integration-test-learnings.md](./integration-test-learnings.md) for insight
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Total Integration Tests | 0 | ~50 | ⏳ |
-| Tests Passing | 0 | 100% | ⏳ |
-| Endpoint Coverage | 0% | 80% | ⏳ |
-| Execution Time | N/A | < 2 min | ⏳ |
+| Total Integration Tests | 9 | ~50 | 🟢 |
+| Tests Passing | 9 | 100% | ✅ |
+| Endpoint Coverage | ~11% | 80% | 🟢 |
+| Execution Time | ~12s | < 2 min | ✅ |
 | Flaky Tests | 0 | 0 | ✅ |
 
 ## Issues & Blockers
@@ -158,11 +168,13 @@ See [integration-test-learnings.md](./integration-test-learnings.md) for insight
 
 ## Recent Updates
 
-### 2026-02-09
+### 2026-02-09 - Session 1
 - ✅ Created integration test plan
 - ✅ Created integration test tracking document
 - ✅ Created integration test learnings document
-- ⏳ Starting Phase 1: Infrastructure setup
+- ✅ Phase 1 Complete: Infrastructure setup (test config, seed data, base class)
+- ✅ Created KnowledgeGraphIntegrationTest with 9 passing tests
+- 🟢 Phase 3 In Progress: 33% complete (KnowledgeGraph done, FeatureSlice and FlowGraph remaining)
 
 ---
 
