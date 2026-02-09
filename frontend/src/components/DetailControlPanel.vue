@@ -122,6 +122,7 @@ const applyPreset = (presetKey: keyof typeof presets) => {
           type="button"
           class="btn btn-sm btn-outline-primary text-start"
           @click="applyPreset(key as keyof typeof presets)"
+          :data-testid="`preset-${key}`"
         >
           {{ preset.name }}
         </button>
@@ -139,6 +140,7 @@ const applyPreset = (presetKey: keyof typeof presets) => {
           id="showComments"
           v-model="options.showComments"
           @change="emitChange"
+          data-testid="toggle-comments"
         >
         <label class="form-check-label small" for="showComments">
           Show Comments
@@ -152,6 +154,7 @@ const applyPreset = (presetKey: keyof typeof presets) => {
           id="showImports"
           v-model="options.showImports"
           @change="emitChange"
+          data-testid="toggle-imports"
         >
         <label class="form-check-label small" for="showImports">
           Show Imports
@@ -178,6 +181,7 @@ const applyPreset = (presetKey: keyof typeof presets) => {
           id="showMethodBodies"
           v-model="options.showMethodBodies"
           @change="emitChange"
+          data-testid="toggle-method-bodies"
         >
         <label class="form-check-label small" for="showMethodBodies">
           Show Method Bodies
@@ -230,6 +234,7 @@ const applyPreset = (presetKey: keyof typeof presets) => {
           id="onlyPublic"
           v-model="options.onlyPublic"
           @change="emitChange"
+          data-testid="toggle-only-public"
         >
         <label class="form-check-label small" for="onlyPublic">
           Public Members Only

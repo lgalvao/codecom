@@ -208,6 +208,8 @@ defineExpose({
         @dragover="handleDragOver($event)"
         @drop="handleDrop(tab.id, $event)"
         @dragend="handleDragEnd"
+        :data-testid="`tab-${tab.id}`"
+        :data-tab-name="tab.name"
       >
         <span class="tab-name small text-truncate" style="max-width: 150px;">
           {{ tab.name }}
@@ -216,6 +218,7 @@ defineExpose({
           class="tab-close-btn btn-close btn-close-sm"
           :aria-label="`Close ${tab.name}`"
           @click="closeTab(tab.id, $event)"
+          :data-testid="`tab-close-${tab.id}`"
         >
           <X :size="12" />
         </button>
