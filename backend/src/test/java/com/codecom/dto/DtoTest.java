@@ -493,4 +493,87 @@ class DtoTest {
         assertEquals("/path/file.java", result.filePath());
         assertEquals("file.java", result.fileName());
     }
+    
+    @Test
+    void testKnowledgeGraphQueryNode() {
+        KnowledgeGraphQuery.QueryNode node = new KnowledgeGraphQuery.QueryNode(
+            1L, "testMethod", "METHOD", "/path/file.java", 100, "com.test", "void testMethod()");
+        
+        assertEquals(1L, node.getId());
+        assertEquals("testMethod", node.getName());
+        assertEquals("METHOD", node.getNodeType());
+        assertEquals("/path/file.java", node.getFilePath());
+        assertEquals(100, node.getLineNumber());
+        assertEquals("com.test", node.getPackageName());
+        assertEquals("void testMethod()", node.getSignature());
+        
+        // Test setters
+        node.setId(2L);
+        node.setName("updatedMethod");
+        node.setNodeType("FIELD");
+        node.setFilePath("/new/path.java");
+        node.setLineNumber(200);
+        node.setPackageName("com.updated");
+        node.setSignature("String field");
+        
+        assertEquals(2L, node.getId());
+        assertEquals("updatedMethod", node.getName());
+        assertEquals("FIELD", node.getNodeType());
+        assertEquals("/new/path.java", node.getFilePath());
+        assertEquals(200, node.getLineNumber());
+        assertEquals("com.updated", node.getPackageName());
+        assertEquals("String field", node.getSignature());
+    }
+    
+    @Test
+    void testKnowledgeGraphQueryPath() {
+        List<Long> nodeIds = List.of(1L, 2L, 3L);
+        List<String> relationshipTypes = List.of("CALLS", "INHERITS");
+        KnowledgeGraphQuery.QueryPath path = new KnowledgeGraphQuery.QueryPath(nodeIds, relationshipTypes);
+        
+        assertEquals(nodeIds, path.getNodeIds());
+        assertEquals(relationshipTypes, path.getRelationshipTypes());
+        assertEquals(2, path.getPathLength()); // pathLength = nodeIds.size() - 1
+        
+        // Test setters
+        List<Long> newNodeIds = List.of(1L, 2L, 3L, 4L);
+        List<String> newRelationshipTypes = List.of("CALLS", "CALLS", "INHERITS");
+        path.setNodeIds(newNodeIds);
+        path.setRelationshipTypes(newRelationshipTypes);
+        
+        assertEquals(newNodeIds, path.getNodeIds());
+        assertEquals(newRelationshipTypes, path.getRelationshipTypes());
+        assertEquals(3, path.getPathLength()); // pathLength updated automatically
+    }
+    
+    @Test
+    void testKnowledgeGraphQueryPathWithNullNodes() {
+        KnowledgeGraphQuery.QueryPath path = new KnowledgeGraphQuery.QueryPath(null, List.of());
+        assertEquals(0, path.getPathLength());
+        
+        path.setNodeIds(null);
+        assertEquals(0, path.getPathLength());
+    }
+    
+    @Test
+    void testKnowledgeGraphQueryWithNodes() {
+        KnowledgeGraphQuery.QueryNode node1 = new KnowledgeGraphQuery.QueryNode(
+            1L, "method1", "METHOD", "/path1", 10, "pkg1", "sig1");
+        KnowledgeGraphQuery.QueryNode node2 = new KnowledgeGraphQuery.QueryNode(
+            2L, "method2", "METHOD", "/path2", 20, "pkg2", "sig2");
+        
+        List<KnowledgeGraphQuery.QueryNode> nodes = List.of(node1, node2);
+        KnowledgeGraphQuery query = new KnowledgeGraphQuery("test", nodes, List.of());
+        
+        assertEquals(2, query.getTotalResults());
+    }
+    
+    @Test
+    void testKnowledgeGraphQueryWithNullNodes() {
+        KnowledgeGraphQuery query = new KnowledgeGraphQuery("test", null, List.of());
+        assertEquals(0, query.getTotalResults());
+        
+        query.setNodes(null);
+        assertEquals(0, query.getTotalResults());
+    }
 }
