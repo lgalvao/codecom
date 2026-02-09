@@ -92,7 +92,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { BButton } from 'bootstrap-vue-next';
-import ComplexityService, { FileComplexity } from '../services/ComplexityService';
+import ComplexityService, { type FileComplexity } from '../services/ComplexityService';
 
 interface Props {
   projectPath: string;

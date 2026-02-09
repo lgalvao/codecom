@@ -134,8 +134,8 @@
 import { ref } from 'vue';
 import { BFormSelect, BFormInput, BButton, BModal } from 'bootstrap-vue-next';
 import KnowledgeGraphService, { 
-  KnowledgeGraphQueryResult, 
-  NodeWithRelationships 
+  type KnowledgeGraphQueryResult, 
+  type NodeWithRelationships 
 } from '../services/KnowledgeGraphService';
 
 const queryType = ref('name');
