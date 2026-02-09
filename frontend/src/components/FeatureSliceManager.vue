@@ -276,9 +276,9 @@ import {
   EyeIcon, ZoomInIcon, EditIcon, TrashIcon 
 } from 'lucide-vue-next';
 import featureSliceService, { 
-  FeatureSliceResponse, FeatureSliceDetail, FeatureSliceNode 
+  type FeatureSliceResponse, type FeatureSliceDetail, type FeatureSliceNode 
 } from '../services/FeatureSliceService';
-import knowledgeGraphService, { CodeNode } from '../services/KnowledgeGraphService';
+import knowledgeGraphService, { type CodeNode } from '../services/KnowledgeGraphService';
 
 const emit = defineEmits<{
   sliceChange: [sliceId: number | null]
