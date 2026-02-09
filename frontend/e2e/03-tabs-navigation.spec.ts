@@ -326,8 +326,20 @@ test.describe('UC-06: Advanced Navigation and Cross-References', () => {
       if (await items.count() > 0) {
         // The application should handle gracefully
         // Either show "No callers found" or disable the button
-        expect(true).toBe(true); // Placeholder assertion
+        // Verify outline panel is still visible and functioning
+        await expect(outlinePanel).toBeVisible();
+        
+        // Verify we have symbols in the outline
+        const count = await items.count();
+        expect(count).toBeGreaterThan(0);
+      } else {
+        // No items, but panel should still be visible
+        await expect(outlinePanel).toBeVisible();
       }
+    } else {
+      // Outline panel not visible - likely no file is open
+      // This is acceptable for this test
+      await expect(page.getByTestId('file-explorer')).toBeVisible();
     }
   });
 

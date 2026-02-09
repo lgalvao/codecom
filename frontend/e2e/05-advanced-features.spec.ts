@@ -17,12 +17,15 @@ test.describe('UC-11: Feature-Based Code Slicing', () => {
     await expect(sidebar).toBeVisible();
     
     // Feature slice manager should be in the sidebar
+    // Manager might be at the bottom of sidebar
+    // The component exists as part of the FeatureSliceManager Vue component
     const sliceManager = page.locator('.feature-slice, [class*="slice"]').first();
     
-    // Manager might be at the bottom of sidebar
-    if (await sliceManager.isVisible()) {
-      await expect(sliceManager).toBeVisible();
-    }
+    // If slice manager UI is visible, verify it
+    const sliceManagerVisible = await sliceManager.isVisible().catch(() => false);
+    
+    // Sidebar should always be visible regardless of slice manager state
+    await expect(sidebar).toBeVisible();
   });
 
   test('should create a new feature slice', async ({ page }) => {
@@ -193,8 +196,12 @@ test.describe('UC-12: State Machine Extraction and Visualization', () => {
       await page.waitForTimeout(500);
       
       // Should highlight or navigate to related code
-      // This is implementation-dependent
-      expect(true).toBe(true);
+      // Verify the interaction doesn't cause errors
+      // The file should remain open
+      await expect(page.getByTestId('welcome-screen')).not.toBeVisible();
+    } else {
+      // If no state nodes visible, at least verify panel is open
+      await expect(page.getByText(/State Machine/i)).toBeVisible();
     }
   });
 
@@ -323,8 +330,18 @@ test.describe('UC-13: Dead Code Detection and Ghost Mode', () => {
       await page.waitForTimeout(1500);
       
       // Dead code analysis should have run
-      // Methods with no callers should be marked
-      expect(true).toBe(true); // Successful execution
+      // Verify the button is still in active state
+      const deadCodeButton = page.getByTestId('btn-dead-code');
+      const classes = await deadCodeButton.getAttribute('class');
+      expect(classes).toContain('warning');
+      
+      // File should be displayed without errors
+      await expect(page.getByTestId('welcome-screen')).not.toBeVisible();
+    } else {
+      // No Java files available, at least verify button state
+      const deadCodeButton = page.getByTestId('btn-dead-code');
+      const classes = await deadCodeButton.getAttribute('class');
+      expect(classes).toContain('warning');
     }
   });
 
@@ -342,8 +359,18 @@ test.describe('UC-13: Dead Code Detection and Ghost Mode', () => {
       await page.waitForTimeout(1500);
       
       // Public methods should maintain normal opacity
-      // This is verified by the analysis logic
-      expect(true).toBe(true);
+      // Verify file is displayed and dead code detection is active
+      const deadCodeButton = page.getByTestId('btn-dead-code');
+      const classes = await deadCodeButton.getAttribute('class');
+      expect(classes).toContain('warning');
+      
+      // File content should be visible
+      await expect(page.getByTestId('welcome-screen')).not.toBeVisible();
+    } else {
+      // No Java files, verify dead code mode is still active
+      const deadCodeButton = page.getByTestId('btn-dead-code');
+      const classes = await deadCodeButton.getAttribute('class');
+      expect(classes).toContain('warning');
     }
   });
 });
@@ -479,7 +506,12 @@ test.describe('Additional Features: Theme and UI Controls', () => {
       await page.waitForTimeout(500);
       
       // Code view should update to focus on isolated symbol
-      expect(true).toBe(true);
+      // Verify panel is still visible and file is still open
+      await expect(page.getByTestId('welcome-screen')).not.toBeVisible();
+      await expect(page.getByText(/Scope Isolation/i)).toBeVisible();
+    } else {
+      // No symbols available, verify panel is at least open
+      await expect(page.getByText(/Scope Isolation/i)).toBeVisible();
     }
   });
 });
