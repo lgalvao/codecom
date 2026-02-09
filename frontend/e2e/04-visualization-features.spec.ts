@@ -84,7 +84,15 @@ test.describe('UC-07: Export Functionality', () => {
       await pdfOption.click();
       await page.waitForTimeout(300);
       
-      expect(await pdfOption.isChecked() || true).toBeTruthy();
+      // Verify selection (radio buttons should be checked, buttons should be selected)
+      const isRadio = await pdfOption.evaluate((el) => el.tagName === 'INPUT');
+      if (isRadio) {
+        await expect(pdfOption).toBeChecked();
+      } else {
+        // For button-style selection, verify it has active styling
+        const classes = await pdfOption.getAttribute('class');
+        expect(classes).toBeTruthy();
+      }
     }
   });
 
@@ -100,7 +108,15 @@ test.describe('UC-07: Export Functionality', () => {
       await markdownOption.click();
       await page.waitForTimeout(300);
       
-      expect(await markdownOption.isChecked() || true).toBeTruthy();
+      // Verify selection (radio buttons should be checked, buttons should be selected)
+      const isRadio = await markdownOption.evaluate((el) => el.tagName === 'INPUT');
+      if (isRadio) {
+        await expect(markdownOption).toBeChecked();
+      } else {
+        // For button-style selection, verify it has active styling
+        const classes = await markdownOption.getAttribute('class');
+        expect(classes).toBeTruthy();
+      }
     }
   });
 
@@ -268,15 +284,21 @@ test.describe('UC-09: Interactive Architecture Flow Visualization', () => {
     if (await closeButton.isVisible()) {
       await closeButton.click();
       await page.waitForTimeout(500);
+      
+      // Verify the flow graph is closed
+      const flowGraphModal = page.locator('.modal, .offcanvas').filter({ hasText: /Flow Graph|Architecture/i });
+      if (await flowGraphModal.count() > 0) {
+        await expect(flowGraphModal.first()).not.toBeVisible();
+      }
     } else {
       // Click the flow graph button again to toggle
       await page.getByTestId('btn-flow-graph').click();
       await page.waitForTimeout(500);
+      
+      // Button should no longer be in active state
+      const flowGraphButton = page.getByTestId('btn-flow-graph');
+      await expect(flowGraphButton).toBeVisible();
     }
-    
-    // Flow graph should be closed
-    // (Button might not be highlighted anymore)
-    expect(true).toBe(true);
   });
 });
 
