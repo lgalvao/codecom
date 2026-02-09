@@ -546,9 +546,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-100 d-flex flex-column">
-    <BNavbar toggleable="lg" :type="theme" :variant="theme" class="px-3 border-bottom border-secondary">
-      <BNavbarBrand href="#" :class="theme === 'dark' ? 'text-white' : 'text-dark'">
+  <div class="h-100 d-flex flex-column" data-testid="app-container">
+    <BNavbar toggleable="lg" :type="theme" :variant="theme" class="px-3 border-bottom border-secondary" data-testid="main-navbar">
+      <BNavbarBrand href="#" :class="theme === 'dark' ? 'text-white' : 'text-dark'" data-testid="app-title">
         <Code class="me-2" />
         CodeCom
       </BNavbarBrand>
@@ -562,6 +562,7 @@ onMounted(() => {
           size="sm" 
           :class="theme === 'dark' ? 'bg-dark text-white border-secondary' : 'bg-light text-dark border-secondary'" 
           style="width: 150px;" 
+          data-testid="lod-selector"
         />
         
         <BButton 
@@ -569,6 +570,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showSearchPanel }]" 
           @click="toggleSearchPanel"
           title="Symbol Search (Ctrl+Shift+F)"
+          data-testid="btn-symbol-search"
         >
           <SearchIcon :size="20" />
         </BButton>
@@ -578,6 +580,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showStatsPanel }]" 
           @click="toggleStatsPanel"
           title="Statistics"
+          data-testid="btn-statistics"
         >
           <BarChart3 :size="20" />
         </BButton>
@@ -587,6 +590,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showDetailPanel }]" 
           @click="toggleDetailPanel"
           title="Detail Control"
+          data-testid="btn-detail-control"
         >
           <Sliders :size="20" />
         </BButton>
@@ -596,6 +600,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': showScopePanel }]" 
           @click="toggleScopePanel"
           title="Scope Isolation"
+          data-testid="btn-scope-isolation"
         >
           <Focus :size="20" />
         </BButton>
@@ -606,6 +611,7 @@ onMounted(() => {
           @click="toggleExportPanel"
           title="Export Code"
           :disabled="!selectedFile"
+          data-testid="btn-export"
         >
           <Download :size="20" />
         </BButton>
@@ -615,6 +621,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-primary': clickNavigationMode }]" 
           @click="toggleClickNavigationMode"
           title="Click Navigation Mode (when enabled, click on symbols to navigate)"
+          data-testid="btn-click-navigation"
         >
           <MousePointer2 :size="20" />
         </BButton>
@@ -624,6 +631,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-warning': showDeadCode }]" 
           @click="toggleDeadCodeVisualization"
           title="Dead Code Detection (FR.37) - Highlights methods with no internal callers"
+          data-testid="btn-dead-code"
         >
           <Ghost :size="20" />
         </BButton>
@@ -633,6 +641,7 @@ onMounted(() => {
           :class="['p-1', theme === 'dark' ? 'text-white-50' : 'text-muted', { 'text-info': showFlowGraph }]" 
           @click="toggleFlowGraph"
           title="Architecture Flow Graph (FR.33) - Interactive visualization of request lifecycle"
+          data-testid="btn-flow-graph"
         >
           <Network :size="20" />
         </BButton>
@@ -643,11 +652,18 @@ onMounted(() => {
           @click="toggleStateMachines"
           title="State Machine Diagrams (FR.36) - Visualize state transitions from enums"
           :disabled="!selectedFile"
+          data-testid="btn-state-machines"
         >
           <GitBranch :size="20" />
         </BButton>
         
-        <BButton variant="link" :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" class="p-0" @click="toggleTheme">
+        <BButton 
+          variant="link" 
+          :class="theme === 'dark' ? 'text-white-50' : 'text-muted'" 
+          class="p-0" 
+          @click="toggleTheme"
+          data-testid="btn-theme-toggle"
+        >
           <Sun v-if="theme === 'dark'" :size="20" />
           <Moon v-else :size="20" />
         </BButton>
@@ -656,17 +672,17 @@ onMounted(() => {
 
     <div class="flex-grow-1 d-flex overflow-hidden">
       <!-- Sidebar -->
-      <div class="sidebar border-end d-flex flex-column" style="width: 260px; background-color: var(--sidebar-bg);">
+      <div class="sidebar border-end d-flex flex-column" style="width: 260px; background-color: var(--sidebar-bg);" data-testid="file-explorer">
         <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
             <FolderOpen :size="18" class="me-2" />
             <span class="fw-bold small">EXPLORER</span>
           </div>
-          <BButton variant="link" size="sm" class="p-0 text-muted" @click="fetchTree">
+          <BButton variant="link" size="sm" class="p-0 text-muted" @click="fetchTree" data-testid="btn-refresh-tree">
              <Code :size="14" />
           </BButton>
         </div>
-        <div class="flex-grow-1 p-0 overflow-auto">
+        <div class="flex-grow-1 p-0 overflow-auto" data-testid="file-tree-container">
           <template v-if="!fileTree">
             <div class="text-muted small p-3 d-flex flex-column align-items-center">
               <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
@@ -708,7 +724,7 @@ onMounted(() => {
           </div>
         </div>
         <div class="flex-grow-1 p-0 overflow-hidden editor-bg position-relative d-flex">
-          <div v-if="!selectedFile" class="welcome-screen d-flex flex-column align-items-center justify-content-center w-100 p-5">
+          <div v-if="!selectedFile" class="welcome-screen d-flex flex-column align-items-center justify-content-center w-100 p-5" data-testid="welcome-screen">
             <Code :size="64" class="text-muted mb-4 opacity-25" />
             <h2 class="display-6 fw-bold">CodeCom</h2>
             <p class="text-muted lead">Smart code comprehension with Level of Detail toggles</p>
@@ -737,7 +753,7 @@ onMounted(() => {
                />
             </div>
             <!-- Outline Sidebar -->
-            <div class="outline-sidebar border-start d-flex flex-column" style="width: 250px; background-color: var(--sidebar-bg);">
+            <div class="outline-sidebar border-start d-flex flex-column" style="width: 250px; background-color: var(--sidebar-bg);" data-testid="outline-panel">
               <div class="p-2 border-bottom d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                   <Code :size="14" class="me-2 text-muted" />
@@ -745,7 +761,7 @@ onMounted(() => {
                 </div>
                 <span class="badge bg-dark text-muted p-1 xx-small">{{ filteredSymbols.length }} symbols</span>
               </div>
-              <div class="flex-grow-1 overflow-auto">
+              <div class="flex-grow-1 overflow-auto" data-testid="outline-symbols">
                 <OutlineView 
                   :symbols="filteredSymbols" 
                   @select="handleSymbolSelect"
