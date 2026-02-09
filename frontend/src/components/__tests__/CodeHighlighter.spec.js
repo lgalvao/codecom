@@ -58,4 +58,73 @@ describe('CodeHighlighter.vue', () => {
     expect(vm.getLanguage('unknown.foo')).toBe('text');
     expect(vm.getLanguage('app.vue')).toBe('vue');
   });
+
+  it('should handle empty code gracefully', async () => {
+    const wrapper = mount(CodeHighlighter, {
+      props: { code: '', filename: 'test.js' }
+    });
+
+    await vi.waitFor(() => {
+      expect(wrapper.find('.shiki-container').exists()).toBe(true);
+    });
+  });
+
+  it('should update when filename changes', async () => {
+    const wrapper = mount(CodeHighlighter, {
+      props: { code: 'const x = 1;', filename: 'test.js' }
+    });
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain('const x = 1;'));
+
+    await wrapper.setProps({ filename: 'test.java' });
+    
+    await vi.waitFor(() => {
+      expect(wrapper.find('.shiki-container').exists()).toBe(true);
+    });
+  });
+
+  it('should handle line numbers when provided', async () => {
+    const wrapper = mount(CodeHighlighter, {
+      props: { 
+        code: 'line1\nline2\nline3', 
+        filename: 'test.js',
+        startLine: 10
+      }
+    });
+
+    await vi.waitFor(() => {
+      expect(wrapper.find('.shiki-container').exists()).toBe(true);
+    });
+  });
+
+  it('should detect language from various file extensions', () => {
+    const wrapper = mount(CodeHighlighter);
+    const vm = wrapper.vm;
+    
+    expect(vm.getLanguage('test.ts')).toBe('typescript');
+    expect(vm.getLanguage('test.html')).toBe('html');
+    expect(vm.getLanguage('test.css')).toBe('css');
+    expect(vm.getLanguage('test.xml')).toBe('xml');
+    expect(vm.getLanguage('test.yaml')).toBe('yaml');
+    expect(vm.getLanguage('test.json')).toBe('json');
+    expect(vm.getLanguage('test.md')).toBe('markdown');
+    expect(vm.getLanguage('test.sql')).toBe('sql');
+    expect(vm.getLanguage('test.vue')).toBe('vue');
+    expect(vm.getLanguage('test.sh')).toBe('bash');
+  });
+
+  it('should render multi-line code correctly', async () => {
+    const multiLineCode = `function hello() {
+  console.log("Hello");
+  return true;
+}`;
+    const wrapper = mount(CodeHighlighter, {
+      props: { code: multiLineCode, filename: 'test.js' }
+    });
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('function hello');
+      expect(wrapper.text()).toContain('console.log');
+    });
+  });
 });
