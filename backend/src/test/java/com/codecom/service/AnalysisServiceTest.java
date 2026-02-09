@@ -334,4 +334,254 @@ class AnalysisServiceTest {
         assertThat(deadCode)
             .noneMatch(d -> d.name().equals("save") && d.callerCount() == 0);
     }
+
+    @Test
+    void getSymbolDefinition_ShouldReturnMethodDefinition() throws IOException {
+        String code = """
+            /**
+             * A simple service class
+             */
+            public class MyService {
+                /**
+                 * Saves a user to database
+                 * @param name The user name
+                 */
+                public void saveUser(String name) {
+                    System.out.println("Saving: " + name);
+                }
+            }
+            """;
+        Path file = tempDir.resolve("MyService.java");
+        Files.writeString(file, code);
+
+        var definition = service.getSymbolDefinition(file.toString(), 9, 0);
+
+        assertThat(definition).isPresent();
+        assertThat(definition.get().name()).isEqualTo("saveUser");
+        assertThat(definition.get().type()).isEqualTo("METHOD");
+        assertThat(definition.get().returnType()).isEqualTo("void");
+        assertThat(definition.get().parameters()).hasSize(1);
+        assertThat(definition.get().parameters().get(0).name()).isEqualTo("name");
+        assertThat(definition.get().parameters().get(0).type()).isEqualTo("String");
+        assertThat(definition.get().documentation()).contains("Saves a user to database");
+        assertThat(definition.get().codePreview()).contains("public void saveUser");
+    }
+
+    @Test
+    void getSymbolDefinition_ShouldReturnClassDefinition() throws IOException {
+        String code = """
+            /**
+             * Service for handling users
+             */
+            public class UserService {
+                public void doSomething() {}
+            }
+            """;
+        Path file = tempDir.resolve("UserService.java");
+        Files.writeString(file, code);
+
+        var definition = service.getSymbolDefinition(file.toString(), 4, 0);
+
+        assertThat(definition).isPresent();
+        assertThat(definition.get().name()).isEqualTo("UserService");
+        assertThat(definition.get().type()).isEqualTo("CLASS");
+        assertThat(definition.get().documentation()).contains("Service for handling users");
+    }
+
+    @Test
+    void getSymbolDefinition_ShouldReturnEmpty_ForNonJavaFile() throws IOException {
+        Path file = tempDir.resolve("test.txt");
+        Files.writeString(file, "Some text");
+
+        var definition = service.getSymbolDefinition(file.toString(), 1, 0);
+
+        assertThat(definition).isEmpty();
+    }
+
+    @Test
+    void getSymbolDefinition_ShouldReturnEmpty_WhenNoSymbolAtLocation() throws IOException {
+        String code = """
+            public class Test {
+                // Just a comment
+            }
+            """;
+        Path file = tempDir.resolve("Test.java");
+        Files.writeString(file, code);
+
+        var definition = service.getSymbolDefinition(file.toString(), 2, 0);
+
+        assertThat(definition).isEmpty();
+    }
+
+    @Test
+    void getSymbolDefinition_ShouldHandleInterfaceDeclaration() throws IOException {
+        String code = """
+            /**
+             * An interface for services
+             */
+            public interface IService {
+                void execute();
+            }
+            """;
+        Path file = tempDir.resolve("IService.java");
+        Files.writeString(file, code);
+
+        var definition = service.getSymbolDefinition(file.toString(), 4, 0);
+
+        assertThat(definition).isPresent();
+        assertThat(definition.get().name()).isEqualTo("IService");
+        assertThat(definition.get().type()).isEqualTo("INTERFACE");
+        assertThat(definition.get().signature()).contains("interface");
+    }
+
+    @Test
+    void getSymbolDefinition_ShouldExtractCodePreview() throws IOException {
+        String code = """
+            public class LongClass {
+                public void longMethod() {
+                    int a = 1;
+                    int b = 2;
+                    int c = 3;
+                    int d = 4;
+                    int e = 5;
+                    int f = 6;
+                    int g = 7;
+                    int h = 8;
+                    int i = 9;
+                    int j = 10;
+                    int k = 11;
+                }
+            }
+            """;
+        Path file = tempDir.resolve("LongClass.java");
+        Files.writeString(file, code);
+
+        var definition = service.getSymbolDefinition(file.toString(), 2, 0);
+
+        assertThat(definition).isPresent();
+        assertThat(definition.get().codePreview()).contains("public void longMethod");
+        assertThat(definition.get().codePreview()).contains("...");
+    }
+
+    @Test
+    void findCallers_ShouldFindMethodCallers() throws IOException {
+        String service1 = """
+            public class Service1 {
+                public void caller1() {
+                    helper();
+                    helper();
+                }
+                
+                private void helper() {
+                    // target method
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("Service1.java"), service1);
+
+        String service2 = """
+            public class Service2 {
+                public void caller2() {
+                    helper();
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("Service2.java"), service2);
+
+        var stats = service.findCallers(tempDir.toString(), "helper", null);
+
+        assertThat(stats.targetMethod()).isEqualTo("helper");
+        assertThat(stats.callers()).hasSize(2); // caller1 and caller2
+        assertThat(stats.totalCallSites()).isEqualTo(3); // 2 calls in caller1, 1 in caller2
+    }
+
+    @Test
+    void findCallers_ShouldReturnEmpty_WhenNoCallers() throws IOException {
+        String code = """
+            public class Service {
+                private void unusedMethod() {
+                    // never called
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("Service.java"), code);
+
+        var stats = service.findCallers(tempDir.toString(), "unusedMethod", null);
+
+        assertThat(stats.callers()).isEmpty();
+        assertThat(stats.totalCallSites()).isZero();
+    }
+
+    @Test
+    void findCallers_ShouldHandleClassName() throws IOException {
+        String code = """
+            public class MyService {
+                public void process() {
+                    System.out.println("test");
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("MyService.java"), code);
+
+        var stats = service.findCallers(tempDir.toString(), "process", "MyService");
+
+        assertThat(stats.targetClass()).isEqualTo("MyService");
+    }
+
+    @Test
+    void findTestReferences_ShouldFindTestFiles() throws IOException {
+        String testCode = """
+            import org.junit.Test;
+            
+            public class UserServiceTest {
+                @Test
+                public void testUserService() {
+                    UserService service = new UserService();
+                    service.process();
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("UserServiceTest.java"), testCode);
+
+        var refs = service.findTestReferences(tempDir.toString(), "UserService");
+
+        assertThat(refs).hasSize(1);
+        assertThat(refs.get(0).testClassName()).isEqualTo("UserServiceTest");
+        assertThat(refs.get(0).referenceCount()).isGreaterThanOrEqualTo(2);
+        assertThat(refs.get(0).referenceLines()).isNotEmpty();
+    }
+
+    @Test
+    void findTestReferences_ShouldReturnEmpty_WhenNoReferences() throws IOException {
+        String testCode = """
+            import org.junit.Test;
+            
+            public class SomeTest {
+                @Test
+                public void testSomething() {
+                    // No reference to target class
+                }
+            }
+            """;
+        Files.writeString(tempDir.resolve("SomeTest.java"), testCode);
+
+        var refs = service.findTestReferences(tempDir.toString(), "UserService");
+
+        assertThat(refs).isEmpty();
+    }
+
+    @Test
+    void findTestReferences_ShouldOnlySearchTestFiles() throws IOException {
+        String nonTestCode = """
+            public class UserService {
+                // This is not a test file
+                UserService service = new UserService();
+            }
+            """;
+        Files.writeString(tempDir.resolve("UserService.java"), nonTestCode);
+
+        var refs = service.findTestReferences(tempDir.toString(), "UserService");
+
+        assertThat(refs).isEmpty();
+    }
 }
