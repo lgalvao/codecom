@@ -15,11 +15,11 @@ See [integration-test-learnings.md](./integration-test-learnings.md) for insight
 | Phase | Status | Tests Created | Tests Passing | Completion |
 |-------|--------|---------------|---------------|------------|
 | Phase 1: Infrastructure | ✅ Complete | N/A | N/A | 100% |
-| Phase 2: Core API | ⏳ Not Started | 0 | 0 | 0% |
+| Phase 2: Core API | ✅ Complete | 14 | 14 | 100% |
 | Phase 3: Graph & Slicing | 🟢 In Progress | 17 | 17 | 63% |
 | Phase 4: Advanced Features | ⏳ Not Started | 0 | 0 | 0% |
 | Phase 5: Verification | ⏳ Not Started | 0 | 0 | 0% |
-| **TOTAL** | **🟢** | **17** | **17** | **34%** |
+| **TOTAL** | **🟢** | **31** | **31** | **62%** |
 
 **Note**: 2 FeatureSlice tests disabled (TODO) due to H2 database issues
 
@@ -43,33 +43,39 @@ See [integration-test-learnings.md](./integration-test-learnings.md) for insight
 ---
 
 ### Phase 2: Core API Tests
-**Status**: ⏳ Not Started
+**Status**: ✅ Complete
 
 #### FileSystemController (`/api/files`)
-- [ ] Test `GET /api/files/tree` - Returns file tree structure
-- [ ] Test `GET /api/files/content` - Returns file content
-- [ ] Test error handling for non-existent files
+- [x] Test `GET /api/files/tree` - Returns file tree structure
+- [x] Test `GET /api/files/content` - Returns file content
+- [x] Test error handling for non-existent files
 
-**Tests Created**: 0 | **Passing**: 0
+**Tests Created**: 3 | **Passing**: 3 ✅
 
 #### AnalysisController (`/api/analysis`)
-- [ ] Test `GET /api/analysis/symbols` - List symbols
-- [ ] Test `GET /api/analysis/callers` - Get callers
-- [ ] Test `GET /api/analysis/definition` - Get definition
-- [ ] Test `GET /api/analysis/test-references` - Get test refs
-- [ ] Test `GET /api/analysis/complexity` - Get complexity
-- [ ] Test `GET /api/analysis/next-package` - Navigate next
-- [ ] Test `GET /api/analysis/previous-package` - Navigate previous
-- [ ] Test error scenarios
+- [x] Test `GET /api/analysis/outline` - List symbols (outline endpoint)
+- [x] Test `GET /api/analysis/callers` - Get callers
+- [x] Test `GET /api/analysis/definition` - Get symbol definition
+- [x] Test `GET /api/analysis/test-references` - Get test references
+- [x] Test `GET /api/analysis/complexity` - Get project complexity
+- [x] Test `GET /api/analysis/complexity/file` - Get file complexity
+- [x] Test `GET /api/analysis/dead-code` - Detect dead code
+- [x] Test error scenarios
 
-**Tests Created**: 0 | **Passing**: 0
+**Tests Created**: 8 | **Passing**: 8 ✅
 
 #### StatisticsController (`/api/statistics`)
-- [ ] Test `GET /api/statistics` - Returns statistics
-- [ ] Test statistics accuracy with seed data
-- [ ] Test empty project scenario
+- [x] Test `GET /api/statistics/file` - Returns file statistics
+- [x] Test `GET /api/statistics/directory` - Returns directory statistics (with aggregate accuracy)
+- [x] Test empty project scenario
 
-**Tests Created**: 0 | **Passing**: 0
+**Tests Created**: 3 | **Passing**: 3 ✅
+
+**Notes**:
+- All endpoints tested with real file system operations
+- Tests create temporary files/directories and clean up after execution
+- Error handling verified for invalid paths and non-existent files
+- Statistics accuracy validated with known code samples
 
 ---
 
@@ -163,11 +169,11 @@ See [integration-test-learnings.md](./integration-test-learnings.md) for insight
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Total Integration Tests | 17 | ~50 | 🟢 |
-| Tests Passing | 17 | 100% | ✅ |
+| Total Integration Tests | 31 | ~50 | 🟢 |
+| Tests Passing | 31 | 100% | ✅ |
 | Tests TODO | 2 | 0 | ⚠️ |
-| Endpoint Coverage | ~21% | 80% | 🟢 |
-| Execution Time | ~16s | < 2 min | ✅ |
+| Endpoint Coverage | ~47% | 80% | 🟢 |
+| Execution Time | ~25s | < 2 min | ✅ |
 | Flaky Tests | 0 | 0 | ✅ |
 
 ## Issues & Blockers
@@ -177,6 +183,16 @@ See [integration-test-learnings.md](./integration-test-learnings.md) for insight
 | - | - | - |
 
 ## Recent Updates
+
+### 2026-02-16 - Session 2
+- ✅ Phase 2 Complete: Core API Tests
+- ✅ Created FileSystemControllerIntegrationTest with 3 passing tests
+- ✅ Created AnalysisControllerIntegrationTest with 8 passing tests
+- ✅ Created StatisticsControllerIntegrationTest with 3 passing tests
+- 🟢 Total: 31 integration tests passing (14 new + 17 previous)
+- 🟢 Endpoint coverage increased from ~21% to ~47%
+- ✅ All tests use temporary files and clean up properly
+- ✅ All tests verify both happy paths and error scenarios
 
 ### 2026-02-09 - Session 1
 - ✅ Created integration test plan
