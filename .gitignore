@@ -19,6 +19,8 @@ frontend/dist-ssr/
 frontend/.npm-cache/
 frontend/.npmrc
 frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
 *.local
 
 # Maven / Backend

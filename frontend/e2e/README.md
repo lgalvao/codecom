@@ -43,6 +43,13 @@ npm run test:e2e:debug
 npx playwright test e2e/file-navigation.spec.ts
 ```
 
+### Run screenshot tests to capture UI states
+```bash
+npx playwright test e2e/screenshots.spec.ts
+```
+
+Screenshots will be saved to `test-results/screenshots/` directory.
+
 ## Test Structure
 
 The e2e tests are organized by use case from the SRS.md:
@@ -85,6 +92,18 @@ The e2e tests are organized by use case from the SRS.md:
   - Tests light/dark theme toggle
   - Tests theme persistence
   - Tests UI component visibility
+
+- **screenshots.spec.ts** - Comprehensive Screenshot Test Suite
+  - Captures screenshots of all major UI screens and scenarios
+  - Tests welcome screen (light and dark themes)
+  - Tests main application layout and toolbar
+  - Tests symbol search interface
+  - Tests all toolbar buttons and controls
+  - Tests theme toggling
+  - Tests file explorer UI
+  - Screenshots saved to `test-results/screenshots/`
+  - 21 different UI scenarios captured
+  - Useful for visual regression testing and documentation
 
 ## Test Data
 
