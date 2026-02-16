@@ -160,11 +160,11 @@ npm run dev
 
 When you first launch CodeCom, you'll see the welcome screen:
 
-![Welcome Screen - Light Theme](frontend/test-results/screenshots/01-welcome-light.png)
+![Welcome Screen - Light Theme](docs/images/screenshots/01-welcome-light.png)
 
 **Figure 1: Welcome screen in light theme**
 
-![Welcome Screen - Dark Theme](frontend/test-results/screenshots/02-welcome-dark.png)
+![Welcome Screen - Dark Theme](docs/images/screenshots/02-welcome-dark.png)
 
 **Figure 2: Welcome screen in dark theme**
 
@@ -181,7 +181,7 @@ The welcome screen provides quick access to:
 
 The CodeCom interface consists of four primary areas:
 
-![Main Application Layout](frontend/test-results/screenshots/03-main-layout.png)
+![Main Application Layout](docs/images/screenshots/03-main-layout.png)
 
 **Figure 3: Main application layout**
 
@@ -194,11 +194,11 @@ The CodeCom interface consists of four primary areas:
 
 The navigation bar contains all primary controls:
 
-![Navigation Bar](frontend/test-results/screenshots/18-navbar-complete.png)
+![Navigation Bar](docs/images/screenshots/18-navbar-complete.png)
 
 **Figure 4: Complete navigation bar with all controls**
 
-![Application Title](frontend/test-results/screenshots/19-app-title.png)
+![Application Title](docs/images/screenshots/19-app-title.png)
 
 **Figure 5: Application title and branding**
 
@@ -220,7 +220,7 @@ The navigation bar contains all primary controls:
 
 The file explorer provides a tree view of your project:
 
-![File Explorer](frontend/test-results/screenshots/09-file-explorer-expanded.png)
+![File Explorer](docs/images/screenshots/09-file-explorer-expanded.png)
 
 **Figure 6: File explorer with expanded folders**
 
@@ -263,7 +263,7 @@ The file explorer is your primary navigation tool for browsing the project struc
 
 CodeCom provides robust tab management for working with multiple files:
 
-![Multiple Tabs](frontend/test-results/screenshots/34-multiple-tabs.png)
+![Multiple Tabs](docs/images/screenshots/34-multiple-tabs.png)
 
 **Figure 7: Multiple files opened in tabs**
 
@@ -285,19 +285,19 @@ The symbol search feature enables instant project-wide search for classes, metho
 
 **Opening Symbol Search:**
 
-![Toolbar Controls](frontend/test-results/screenshots/04-toolbar-controls.png)
+![Toolbar Controls](docs/images/screenshots/04-toolbar-controls.png)
 
 **Figure 8: Toolbar with search button highlighted**
 
 Click the **Search** button (🔍) in the navigation bar, or press `Ctrl + Shift + F`.
 
-![Symbol Search Dialog](frontend/test-results/screenshots/05-symbol-search-dialog.png)
+![Symbol Search Dialog](docs/images/screenshots/05-symbol-search-dialog.png)
 
 **Figure 9: Symbol search dialog opened**
 
 **Using Symbol Search:**
 
-![Symbol Search with Query](frontend/test-results/screenshots/06-symbol-search-with-query.png)
+![Symbol Search with Query](docs/images/screenshots/06-symbol-search-with-query.png)
 
 **Figure 10: Symbol search with query "Service"**
 
@@ -320,7 +320,7 @@ Click the **Search** button (🔍) in the navigation bar, or press `Ctrl + Shift
 
 Breadcrumbs show your current location in the project hierarchy and provide quick navigation to sibling files:
 
-![Breadcrumb Navigation](frontend/test-results/screenshots/31-breadcrumb-navigation.png)
+![Breadcrumb Navigation](docs/images/screenshots/31-breadcrumb-navigation.png)
 
 **Figure 11: Interactive breadcrumb navigation**
 
@@ -358,11 +358,11 @@ This is particularly useful when reviewing related files in sequence, such as:
 
 The Level of Detail selector controls the complexity of code displayed:
 
-![Level of Detail Selector](frontend/test-results/screenshots/07-lod-selector.png)
+![Level of Detail Selector](docs/images/screenshots/07-lod-selector.png)
 
 **Figure 12: Level of Detail selector in navigation bar**
 
-![LoD Dropdown](frontend/test-results/screenshots/30-lod-dropdown.png)
+![LoD Dropdown](docs/images/screenshots/30-lod-dropdown.png)
 
 **Figure 13: Level of Detail dropdown expanded**
 
@@ -394,11 +394,11 @@ The Level of Detail selector controls the complexity of code displayed:
 
 The detail control panel provides 8 independent filters for fine-grained control over what code elements are displayed:
 
-![Detail Button](frontend/test-results/screenshots/11-detail-button.png)
+![Detail Button](docs/images/screenshots/11-detail-button.png)
 
 **Figure 14: Detail button in navigation bar**
 
-![Detail Controls Panel](frontend/test-results/screenshots/23-detail-controls-panel.png)
+![Detail Controls Panel](docs/images/screenshots/23-detail-controls-panel.png)
 
 **Figure 15: Detail controls panel opened**
 
@@ -454,7 +454,7 @@ The detail control panel provides 8 independent filters for fine-grained control
 
 Scope isolation allows you to focus on a specific method or class while dimming the surrounding code:
 
-![Scope Isolation](frontend/test-results/screenshots/35-scope-isolation.png)
+![Scope Isolation](docs/images/screenshots/35-scope-isolation.png)
 
 **Figure 16: Scope isolation focusing on a single method**
 
@@ -480,7 +480,7 @@ Scope isolation allows you to focus on a specific method or class while dimming 
 
 The code minimap provides a bird's-eye view of file structure:
 
-![Code Minimap](frontend/test-results/screenshots/33-code-minimap.png)
+![Code Minimap](docs/images/screenshots/33-code-minimap.png)
 
 **Figure 17: Code minimap showing file structure**
 
@@ -510,7 +510,7 @@ CodeCom supports both light and dark themes:
 
 Click the **Theme Toggle** button (🌓) in the top-right corner of the navigation bar.
 
-![Theme Toggled](frontend/test-results/screenshots/08-theme-toggled.png)
+![Theme Toggled](docs/images/screenshots/08-theme-toggled.png)
 
 **Figure 18: Application with dark theme active**
 
@@ -535,11 +535,11 @@ All screenshots in this manual show both light and dark theme versions where app
 
 View comprehensive statistics about your codebase:
 
-![Statistics Button](frontend/test-results/screenshots/10-stats-button.png)
+![Statistics Button](docs/images/screenshots/10-stats-button.png)
 
 **Figure 19: Statistics button in navigation bar**
 
-![Statistics Modal](frontend/test-results/screenshots/22-statistics-modal.png)
+![Statistics Modal](docs/images/screenshots/22-statistics-modal.png)
 
 **Figure 20: Code statistics modal**
 
@@ -582,11 +582,11 @@ View comprehensive statistics about your codebase:
 
 The complexity heatmap visualizes code complexity across your project using a color-coded overlay:
 
-![Heatmap Button](frontend/test-results/screenshots/13-heatmap-button.png)
+![Heatmap Button](docs/images/screenshots/13-heatmap-button.png)
 
 **Figure 21: Complexity heatmap button in navigation bar**
 
-![Complexity Heatmap](frontend/test-results/screenshots/24-complexity-heatmap.png)
+![Complexity Heatmap](docs/images/screenshots/24-complexity-heatmap.png)
 
 **Figure 22: Complexity heatmap visualization**
 
@@ -682,11 +682,11 @@ Hovering over symbols displays rich contextual information:
 
 The Architecture Flow Graph provides an interactive visualization of the complete request lifecycle from frontend to backend:
 
-![Flow Graph Button](frontend/test-results/screenshots/14-flow-graph-button.png)
+![Flow Graph Button](docs/images/screenshots/14-flow-graph-button.png)
 
 **Figure 23: Architecture flow graph button in navigation bar**
 
-![Flow Graph](frontend/test-results/screenshots/25-flow-graph.png)
+![Flow Graph](docs/images/screenshots/25-flow-graph.png)
 
 **Figure 24: Interactive architecture flow graph**
 
@@ -755,11 +755,11 @@ The Architecture Flow Graph provides an interactive visualization of the complet
 
 Automatically generates visual state transition diagrams from Java Enums or TypeScript Union types:
 
-![State Machine Button](frontend/test-results/screenshots/15-state-machine-button.png)
+![State Machine Button](docs/images/screenshots/15-state-machine-button.png)
 
 **Figure 25: State machine button in navigation bar**
 
-![State Machine](frontend/test-results/screenshots/26-state-machine.png)
+![State Machine](docs/images/screenshots/26-state-machine.png)
 
 **Figure 26: Extracted state machine diagram**
 
@@ -829,11 +829,11 @@ The tool analyzes code that uses this enum and generates a diagram showing:
 
 The Knowledge Graph provides a comprehensive relationship database across all project code:
 
-![Knowledge Graph Button](frontend/test-results/screenshots/17-knowledge-graph-button.png)
+![Knowledge Graph Button](docs/images/screenshots/17-knowledge-graph-button.png)
 
 **Figure 27: Knowledge graph button in navigation bar**
 
-![Knowledge Graph](frontend/test-results/screenshots/28-knowledge-graph.png)
+![Knowledge Graph](docs/images/screenshots/28-knowledge-graph.png)
 
 **Figure 28: Knowledge graph visualization**
 
@@ -915,11 +915,11 @@ Execute complex queries across language boundaries:
 
 Define logical feature domains and filter the codebase to show only related code:
 
-![Feature Slice Button](frontend/test-results/screenshots/16-feature-slice-button.png)
+![Feature Slice Button](docs/images/screenshots/16-feature-slice-button.png)
 
 **Figure 29: Feature slice button in navigation bar**
 
-![Feature Slice](frontend/test-results/screenshots/27-feature-slice.png)
+![Feature Slice](docs/images/screenshots/27-feature-slice.png)
 
 **Figure 30: Feature-based code slicing interface**
 
@@ -1145,11 +1145,11 @@ Navigate bidirectionally between callers and callees:
 
 Export your code in multiple formats:
 
-![Export Button](frontend/test-results/screenshots/12-export-button.png)
+![Export Button](docs/images/screenshots/12-export-button.png)
 
 **Figure 31: Export button in navigation bar**
 
-![Export Modal](frontend/test-results/screenshots/29-export-modal.png)
+![Export Modal](docs/images/screenshots/29-export-modal.png)
 
 **Figure 32: Export modal with format options**
 

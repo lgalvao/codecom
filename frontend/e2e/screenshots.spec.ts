@@ -1,10 +1,32 @@
 import { test, expect } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * Helper function to save screenshot to both test-results and docs/images directories
+ */
+async function saveScreenshot(page: any, filename: string) {
+  const testResultsPath = `test-results/screenshots/${filename}`;
+  const docsPath = `../docs/images/screenshots/${filename}`;
+  
+  // Save to test-results (for test verification)
+  await page.screenshot({ path: testResultsPath, fullPage: true });
+  
+  // Copy to docs/images (for documentation)
+  const docsDir = path.dirname(docsPath);
+  if (!fs.existsSync(docsDir)) {
+    fs.mkdirSync(docsDir, { recursive: true });
+  }
+  fs.copyFileSync(testResultsPath, docsPath);
+}
 
 /**
  * Comprehensive Screenshot Test Suite
  * 
  * This test captures screenshots of the CodeCom system at various stages and scenarios.
- * All screenshots are saved to test-results/screenshots/
+ * Screenshots are saved to both:
+ * - test-results/screenshots/ (for test verification)
+ * - docs/images/screenshots/ (for documentation in USER_MANUAL.md)
  * 
  * Coverage:
  * - Welcome screen (light and dark themes)
@@ -14,6 +36,7 @@ import { test, expect } from '@playwright/test';
  * - Various UI modals and dialogs
  * - Theme switcher
  * - File explorer UI
+ * - Code viewer and advanced features
  * 
  * Note: This test suite focuses on UI component screenshots and does not require
  * full backend connectivity for all scenarios.
@@ -34,7 +57,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     }
     
     await expect(page.getByTestId('welcome-screen')).toBeVisible();
-    await page.screenshot({ path: 'test-results/screenshots/01-welcome-light.png', fullPage: true });
+    await saveScreenshot(page, '01-welcome-light.png');
   });
 
   test('02 - Welcome screen in dark theme', async ({ page }) => {
@@ -50,7 +73,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     }
     
     await expect(page.getByTestId('welcome-screen')).toBeVisible();
-    await page.screenshot({ path: 'test-results/screenshots/02-welcome-dark.png', fullPage: true });
+    await saveScreenshot(page, '02-welcome-dark.png');
   });
 
   test('03 - Main application layout and file explorer', async ({ page }) => {
@@ -62,7 +85,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     await expect(page.getByTestId('lod-select')).toBeVisible();
     await expect(page.getByTestId('theme-toggle')).toBeVisible();
     
-    await page.screenshot({ path: 'test-results/screenshots/03-main-layout.png', fullPage: true });
+    await saveScreenshot(page, '03-main-layout.png');
   });
 
   test('04 - Toolbar buttons and controls', async ({ page }) => {
@@ -74,7 +97,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     await expect(page.getByTestId('stats-button')).toBeVisible();
     await expect(page.getByTestId('detail-button')).toBeVisible();
     
-    await page.screenshot({ path: 'test-results/screenshots/04-toolbar-controls.png', fullPage: true });
+    await saveScreenshot(page, '04-toolbar-controls.png');
   });
 
   test('05 - Symbol search dialog', async ({ page }) => {
@@ -86,7 +109,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     await searchButton.click();
     await page.waitForTimeout(500);
     
-    await page.screenshot({ path: 'test-results/screenshots/05-symbol-search-dialog.png', fullPage: true });
+    await saveScreenshot(page, '05-symbol-search-dialog.png');
   });
 
   test('06 - Symbol search with query', async ({ page }) => {
@@ -105,7 +128,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(500);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/06-symbol-search-with-query.png', fullPage: true });
+    await saveScreenshot(page, '06-symbol-search-with-query.png');
   });
 
   test('07 - Level of Detail selector', async ({ page }) => {
@@ -116,7 +139,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     const lodSelect = page.getByTestId('lod-select');
     await expect(lodSelect).toBeVisible();
     
-    await page.screenshot({ path: 'test-results/screenshots/07-lod-selector.png', fullPage: true });
+    await saveScreenshot(page, '07-lod-selector.png');
   });
 
   test('08 - Theme toggle interaction', async ({ page }) => {
@@ -135,7 +158,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     await themeToggle.click();
     await page.waitForTimeout(300);
     
-    await page.screenshot({ path: 'test-results/screenshots/08-theme-toggled.png', fullPage: true });
+    await saveScreenshot(page, '08-theme-toggled.png');
   });
 
   test('09 - File explorer expanded view', async ({ page }) => {
@@ -161,7 +184,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       // Continue even if folder expansion fails
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/09-file-explorer-expanded.png', fullPage: true });
+    await saveScreenshot(page, '09-file-explorer-expanded.png');
   });
 
   test('10 - Statistics button highlight', async ({ page }) => {
@@ -171,7 +194,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     const statsButton = page.getByTestId('stats-button');
     await expect(statsButton).toBeVisible();
     
-    await page.screenshot({ path: 'test-results/screenshots/10-stats-button.png', fullPage: true });
+    await saveScreenshot(page, '10-stats-button.png');
   });
 
   test('11 - Detail button highlight', async ({ page }) => {
@@ -181,7 +204,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     const detailButton = page.getByTestId('detail-button');
     await expect(detailButton).toBeVisible();
     
-    await page.screenshot({ path: 'test-results/screenshots/11-detail-button.png', fullPage: true });
+    await saveScreenshot(page, '11-detail-button.png');
   });
 
   test('12 - Export button if available', async ({ page }) => {
@@ -193,7 +216,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await expect(exportButton).toBeVisible();
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/12-export-button.png', fullPage: true });
+    await saveScreenshot(page, '12-export-button.png');
   });
 
   test('13 - Complexity heatmap button if available', async ({ page }) => {
@@ -205,7 +228,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await expect(heatmapButton).toBeVisible();
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/13-heatmap-button.png', fullPage: true });
+    await saveScreenshot(page, '13-heatmap-button.png');
   });
 
   test('14 - Flow graph button if available', async ({ page }) => {
@@ -217,7 +240,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await expect(flowGraphButton).toBeVisible();
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/14-flow-graph-button.png', fullPage: true });
+    await saveScreenshot(page, '14-flow-graph-button.png');
   });
 
   test('15 - State machine button if available', async ({ page }) => {
@@ -229,7 +252,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await expect(stateMachineButton).toBeVisible();
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/15-state-machine-button.png', fullPage: true });
+    await saveScreenshot(page, '15-state-machine-button.png');
   });
 
   test('16 - Feature slice button if available', async ({ page }) => {
@@ -241,7 +264,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await expect(sliceButton).toBeVisible();
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/16-feature-slice-button.png', fullPage: true });
+    await saveScreenshot(page, '16-feature-slice-button.png');
   });
 
   test('17 - Knowledge graph button if available', async ({ page }) => {
@@ -253,7 +276,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await expect(graphButton).toBeVisible();
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/17-knowledge-graph-button.png', fullPage: true });
+    await saveScreenshot(page, '17-knowledge-graph-button.png');
   });
 
   test('18 - Navbar with all controls', async ({ page }) => {
@@ -263,7 +286,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     const navbar = page.getByTestId('navbar');
     await expect(navbar).toBeVisible();
     
-    await page.screenshot({ path: 'test-results/screenshots/18-navbar-complete.png', fullPage: true });
+    await saveScreenshot(page, '18-navbar-complete.png');
   });
 
   test('19 - Application title', async ({ page }) => {
@@ -274,7 +297,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     await expect(appTitle).toBeVisible();
     await expect(appTitle).toContainText('CodeCom');
     
-    await page.screenshot({ path: 'test-results/screenshots/19-app-title.png', fullPage: true });
+    await saveScreenshot(page, '19-app-title.png');
   });
 
   test('20 - Full page overview - light theme', async ({ page }) => {
@@ -289,7 +312,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(300);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/20-full-page-light.png', fullPage: true });
+    await saveScreenshot(page, '20-full-page-light.png');
   });
 
   test('21 - Full page overview - dark theme', async ({ page }) => {
@@ -304,7 +327,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(300);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/21-full-page-dark.png', fullPage: true });
+    await saveScreenshot(page, '21-full-page-dark.png');
   });
 
   test('22 - Statistics modal opened', async ({ page }) => {
@@ -318,7 +341,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(500);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/22-statistics-modal.png', fullPage: true });
+    await saveScreenshot(page, '22-statistics-modal.png');
   });
 
   test('23 - Detail controls panel opened', async ({ page }) => {
@@ -332,7 +355,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(500);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/23-detail-controls-panel.png', fullPage: true });
+    await saveScreenshot(page, '23-detail-controls-panel.png');
   });
 
   test('24 - Complexity heatmap modal opened', async ({ page }) => {
@@ -346,7 +369,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(1000);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/24-complexity-heatmap.png', fullPage: true });
+    await saveScreenshot(page, '24-complexity-heatmap.png');
   });
 
   test('25 - Flow graph modal opened', async ({ page }) => {
@@ -360,7 +383,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(1500);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/25-flow-graph.png', fullPage: true });
+    await saveScreenshot(page, '25-flow-graph.png');
   });
 
   test('26 - State machine modal opened', async ({ page }) => {
@@ -374,7 +397,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(1000);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/26-state-machine.png', fullPage: true });
+    await saveScreenshot(page, '26-state-machine.png');
   });
 
   test('27 - Feature slice modal opened', async ({ page }) => {
@@ -388,7 +411,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(500);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/27-feature-slice.png', fullPage: true });
+    await saveScreenshot(page, '27-feature-slice.png');
   });
 
   test('28 - Knowledge graph modal opened', async ({ page }) => {
@@ -402,7 +425,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(1000);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/28-knowledge-graph.png', fullPage: true });
+    await saveScreenshot(page, '28-knowledge-graph.png');
   });
 
   test('29 - Export modal opened', async ({ page }) => {
@@ -432,7 +455,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       }
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/29-export-modal.png', fullPage: true });
+    await saveScreenshot(page, '29-export-modal.png');
   });
 
   test('30 - Level of Detail dropdown expanded', async ({ page }) => {
@@ -446,7 +469,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       await page.waitForTimeout(300);
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/30-lod-dropdown.png', fullPage: true });
+    await saveScreenshot(page, '30-lod-dropdown.png');
   });
 
   test('31 - Breadcrumb navigation example', async ({ page }) => {
@@ -466,7 +489,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       // Continue even if file opening fails
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/31-breadcrumb-navigation.png', fullPage: true });
+    await saveScreenshot(page, '31-breadcrumb-navigation.png');
   });
 
   test('32 - File opened with code viewer', async ({ page }) => {
@@ -486,7 +509,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       // Continue even if file opening fails
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/32-code-viewer.png', fullPage: true });
+    await saveScreenshot(page, '32-code-viewer.png');
   });
 
   test('33 - Code minimap visible', async ({ page }) => {
@@ -506,7 +529,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       // Continue even if file opening fails
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/33-code-minimap.png', fullPage: true });
+    await saveScreenshot(page, '33-code-minimap.png');
   });
 
   test('34 - Multiple tabs opened', async ({ page }) => {
@@ -532,7 +555,7 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       // Continue even if file opening fails
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/34-multiple-tabs.png', fullPage: true });
+    await saveScreenshot(page, '34-multiple-tabs.png');
   });
 
   test('35 - Scope isolation view', async ({ page }) => {
@@ -560,6 +583,6 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
       // Continue even if scope isolation fails
     }
     
-    await page.screenshot({ path: 'test-results/screenshots/35-scope-isolation.png', fullPage: true });
+    await saveScreenshot(page, '35-scope-isolation.png');
   });
 });
