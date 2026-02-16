@@ -11,6 +11,10 @@ public class FlowGraphEdge {
     private String label;
     private Integer lineNumber;
     
+    public FlowGraphEdge() {
+        // Default constructor for Jackson
+    }
+    
     public FlowGraphEdge(String sourceId, String targetId, String edgeType, String label) {
         this.sourceId = sourceId;
         this.targetId = targetId;
