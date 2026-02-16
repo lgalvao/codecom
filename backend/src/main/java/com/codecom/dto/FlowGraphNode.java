@@ -13,6 +13,10 @@ public class FlowGraphNode {
     private Integer lineNumber;
     private String packageName;
     
+    public FlowGraphNode() {
+        // Default constructor for Jackson
+    }
+    
     public FlowGraphNode(String id, String name, String nodeType, String layer, 
                         String filePath, Integer lineNumber, String packageName) {
         this.id = id;

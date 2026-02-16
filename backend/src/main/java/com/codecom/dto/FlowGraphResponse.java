@@ -12,6 +12,10 @@ public class FlowGraphResponse {
     private List<FlowGraphEdge> edges;
     private Map<String, Object> metadata;
     
+    public FlowGraphResponse() {
+        // Default constructor for Jackson
+    }
+    
     public FlowGraphResponse(List<FlowGraphNode> nodes, List<FlowGraphEdge> edges, 
                             Map<String, Object> metadata) {
         this.nodes = nodes;
