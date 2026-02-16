@@ -306,4 +306,260 @@ test.describe('CodeCom Screenshots - UI Walkthrough', () => {
     
     await page.screenshot({ path: 'test-results/screenshots/21-full-page-dark.png', fullPage: true });
   });
+
+  test('22 - Statistics modal opened', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Open stats modal if button exists
+    const statsButton = page.getByTestId('stats-button');
+    if (await statsButton.count() > 0) {
+      await statsButton.click();
+      await page.waitForTimeout(500);
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/22-statistics-modal.png', fullPage: true });
+  });
+
+  test('23 - Detail controls panel opened', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Open detail controls panel if button exists
+    const detailButton = page.getByTestId('detail-button');
+    if (await detailButton.count() > 0) {
+      await detailButton.click();
+      await page.waitForTimeout(500);
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/23-detail-controls-panel.png', fullPage: true });
+  });
+
+  test('24 - Complexity heatmap modal opened', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Open heatmap modal if button exists
+    const heatmapButton = page.getByTestId('heatmap-button');
+    if (await heatmapButton.count() > 0) {
+      await heatmapButton.click();
+      await page.waitForTimeout(1000);
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/24-complexity-heatmap.png', fullPage: true });
+  });
+
+  test('25 - Flow graph modal opened', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Open flow graph modal if button exists
+    const flowGraphButton = page.getByTestId('flow-graph-button');
+    if (await flowGraphButton.count() > 0) {
+      await flowGraphButton.click();
+      await page.waitForTimeout(1500);
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/25-flow-graph.png', fullPage: true });
+  });
+
+  test('26 - State machine modal opened', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Open state machine modal if button exists
+    const stateMachineButton = page.getByTestId('state-machine-button');
+    if (await stateMachineButton.count() > 0) {
+      await stateMachineButton.click();
+      await page.waitForTimeout(1000);
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/26-state-machine.png', fullPage: true });
+  });
+
+  test('27 - Feature slice modal opened', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Open feature slice modal if button exists
+    const sliceButton = page.getByTestId('slice-button');
+    if (await sliceButton.count() > 0) {
+      await sliceButton.click();
+      await page.waitForTimeout(500);
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/27-feature-slice.png', fullPage: true });
+  });
+
+  test('28 - Knowledge graph modal opened', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Open knowledge graph modal if button exists
+    const graphButton = page.getByTestId('graph-button');
+    if (await graphButton.count() > 0) {
+      await graphButton.click();
+      await page.waitForTimeout(1000);
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/28-knowledge-graph.png', fullPage: true });
+  });
+
+  test('29 - Export modal opened', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Try to open a file first to enable export button
+    try {
+      await page.waitForSelector('[data-testid="file-node"]', { timeout: 3000 });
+      const files = page.locator('[data-testid="file-node"]');
+      const count = await files.count();
+      if (count > 0) {
+        await files.first().click();
+        await page.waitForTimeout(500);
+      }
+    } catch (e) {
+      // Continue even if file opening fails
+    }
+    
+    // Open export modal if button exists and is enabled
+    const exportButton = page.getByTestId('export-button');
+    if (await exportButton.count() > 0) {
+      const isEnabled = await exportButton.isEnabled();
+      if (isEnabled) {
+        await exportButton.click();
+        await page.waitForTimeout(500);
+      }
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/29-export-modal.png', fullPage: true });
+  });
+
+  test('30 - Level of Detail dropdown expanded', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Click on LoD selector to open dropdown
+    const lodSelect = page.getByTestId('lod-select');
+    if (await lodSelect.count() > 0) {
+      await lodSelect.click();
+      await page.waitForTimeout(300);
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/30-lod-dropdown.png', fullPage: true });
+  });
+
+  test('31 - Breadcrumb navigation example', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Try to open a file to show breadcrumbs
+    try {
+      await page.waitForSelector('[data-testid="file-node"]', { timeout: 3000 });
+      const files = page.locator('[data-testid="file-node"]');
+      const count = await files.count();
+      if (count > 0) {
+        await files.first().click();
+        await page.waitForTimeout(500);
+      }
+    } catch (e) {
+      // Continue even if file opening fails
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/31-breadcrumb-navigation.png', fullPage: true });
+  });
+
+  test('32 - File opened with code viewer', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Try to open a file
+    try {
+      await page.waitForSelector('[data-testid="file-node"]', { timeout: 3000 });
+      const files = page.locator('[data-testid="file-node"]');
+      const count = await files.count();
+      if (count > 0) {
+        await files.first().click();
+        await page.waitForTimeout(1000);
+      }
+    } catch (e) {
+      // Continue even if file opening fails
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/32-code-viewer.png', fullPage: true });
+  });
+
+  test('33 - Code minimap visible', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Try to open a file to show minimap
+    try {
+      await page.waitForSelector('[data-testid="file-node"]', { timeout: 3000 });
+      const files = page.locator('[data-testid="file-node"]');
+      const count = await files.count();
+      if (count > 0) {
+        await files.first().click();
+        await page.waitForTimeout(1000);
+      }
+    } catch (e) {
+      // Continue even if file opening fails
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/33-code-minimap.png', fullPage: true });
+  });
+
+  test('34 - Multiple tabs opened', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Try to open multiple files
+    try {
+      await page.waitForSelector('[data-testid="file-node"]', { timeout: 3000 });
+      const files = page.locator('[data-testid="file-node"]');
+      const count = await files.count();
+      if (count > 1) {
+        await files.nth(0).click();
+        await page.waitForTimeout(300);
+        await files.nth(1).click();
+        await page.waitForTimeout(300);
+        if (count > 2) {
+          await files.nth(2).click();
+          await page.waitForTimeout(300);
+        }
+      }
+    } catch (e) {
+      // Continue even if file opening fails
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/34-multiple-tabs.png', fullPage: true });
+  });
+
+  test('35 - Scope isolation view', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('file-explorer')).toBeVisible();
+    
+    // Try to open a file and activate scope isolation
+    try {
+      await page.waitForSelector('[data-testid="file-node"]', { timeout: 3000 });
+      const files = page.locator('[data-testid="file-node"]');
+      const count = await files.count();
+      if (count > 0) {
+        await files.first().click();
+        await page.waitForTimeout(1000);
+        
+        // Try to click on a method/class to isolate scope
+        const codeElements = page.locator('.code-element, .method-element, .class-element');
+        const elemCount = await codeElements.count();
+        if (elemCount > 0) {
+          await codeElements.first().click();
+          await page.waitForTimeout(500);
+        }
+      }
+    } catch (e) {
+      // Continue even if scope isolation fails
+    }
+    
+    await page.screenshot({ path: 'test-results/screenshots/35-scope-isolation.png', fullPage: true });
+  });
 });
