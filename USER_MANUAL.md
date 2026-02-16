@@ -392,15 +392,11 @@ The Level of Detail selector controls the complexity of code displayed:
 
 ### 5.2 Detail Control Panel
 
-The detail control panel provides 8 independent filters for fine-grained control over what code elements are displayed:
-
-![Detail Button](docs/images/screenshots/11-detail-button.png)
-
-**Figure 14: Detail button in navigation bar**
+The detail control panel provides 8 independent filters for fine-grained control over what code elements are displayed. Click the **Detail Control** button (⚙️) in the navigation bar:
 
 ![Detail Controls Panel](docs/images/screenshots/23-detail-controls-panel.png)
 
-**Figure 15: Detail controls panel opened**
+**Figure 14: Detail controls panel showing all available filters**
 
 **Available Filters:**
 
@@ -456,7 +452,7 @@ Scope isolation allows you to focus on a specific method or class while dimming 
 
 ![Scope Isolation](docs/images/screenshots/35-scope-isolation.png)
 
-**Figure 16: Scope isolation focusing on a single method**
+**Figure 15: Scope isolation focusing on a single method**
 
 **Features:**
 - **Click to isolate** - Click on any method/class to focus on it
@@ -482,7 +478,7 @@ The code minimap provides a bird's-eye view of file structure:
 
 ![Code Minimap](docs/images/screenshots/33-code-minimap.png)
 
-**Figure 17: Code minimap showing file structure**
+**Figure 16: Code minimap showing file structure**
 
 **Visual Encoding:**
 - **🟢 Green blocks** - Public methods and classes
@@ -512,7 +508,7 @@ Click the **Theme Toggle** button (🌓) in the top-right corner of the navigati
 
 ![Theme Toggled](docs/images/screenshots/08-theme-toggled.png)
 
-**Figure 18: Application with dark theme active**
+**Figure 17: Application with dark theme active**
 
 **Theme Features:**
 - **Instant switching** - No page reload required
@@ -533,15 +529,11 @@ All screenshots in this manual show both light and dark theme versions where app
 
 ### 6.1 Code Statistics
 
-View comprehensive statistics about your codebase:
-
-![Statistics Button](docs/images/screenshots/10-stats-button.png)
-
-**Figure 19: Statistics button in navigation bar**
+View comprehensive statistics about your codebase by clicking the **Statistics** button (📊) in the navigation bar:
 
 ![Statistics Modal](docs/images/screenshots/22-statistics-modal.png)
 
-**Figure 20: Code statistics modal**
+**Figure 18: Code statistics modal showing comprehensive metrics**
 
 **Metrics Provided:**
 
@@ -580,15 +572,11 @@ View comprehensive statistics about your codebase:
 
 ### 6.2 Complexity Heatmap
 
-The complexity heatmap visualizes code complexity across your project using a color-coded overlay:
-
-![Heatmap Button](docs/images/screenshots/13-heatmap-button.png)
-
-**Figure 21: Complexity heatmap button in navigation bar**
+The complexity heatmap visualizes code complexity across your project using a color-coded overlay. Click the **Heatmap** button (🌡️) in the navigation bar to activate it:
 
 ![Complexity Heatmap](docs/images/screenshots/24-complexity-heatmap.png)
 
-**Figure 22: Complexity heatmap visualization**
+**Figure 19: Complexity heatmap showing color-coded complexity across files**
 
 **Color Coding (FR.32):**
 - 🟢 **Green/Blue** - Low complexity, simple files (cyclomatic complexity < 10)
@@ -680,15 +668,11 @@ Hovering over symbols displays rich contextual information:
 
 ### 7.1 Architecture Flow Graph
 
-The Architecture Flow Graph provides an interactive visualization of the complete request lifecycle from frontend to backend:
-
-![Flow Graph Button](docs/images/screenshots/14-flow-graph-button.png)
-
-**Figure 23: Architecture flow graph button in navigation bar**
+The Architecture Flow Graph provides an interactive visualization of the complete request lifecycle from frontend to backend. Click the **Flow Graph** button (⚡) in the navigation bar to open it:
 
 ![Flow Graph](docs/images/screenshots/25-flow-graph.png)
 
-**Figure 24: Interactive architecture flow graph**
+**Figure 20: Interactive architecture flow graph visualizing the full request lifecycle**
 
 **Features (FR.33):**
 
@@ -753,15 +737,11 @@ The Architecture Flow Graph provides an interactive visualization of the complet
 
 ### 7.2 State Machine Extraction
 
-Automatically generates visual state transition diagrams from Java Enums or TypeScript Union types:
-
-![State Machine Button](docs/images/screenshots/15-state-machine-button.png)
-
-**Figure 25: State machine button in navigation bar**
+Automatically generates visual state transition diagrams from Java Enums or TypeScript Union types. Click the **State Machine** button (🔄) in the navigation bar:
 
 ![State Machine](docs/images/screenshots/26-state-machine.png)
 
-**Figure 26: Extracted state machine diagram**
+**Figure 21: Extracted state machine diagram showing transitions between states**
 
 **Features (FR.36):**
 
@@ -827,15 +807,11 @@ The tool analyzes code that uses this enum and generates a diagram showing:
 
 ### 7.3 Knowledge Graph
 
-The Knowledge Graph provides a comprehensive relationship database across all project code:
-
-![Knowledge Graph Button](docs/images/screenshots/17-knowledge-graph-button.png)
-
-**Figure 27: Knowledge graph button in navigation bar**
+The Knowledge Graph provides a comprehensive relationship database across all project code. Click the **Knowledge Graph** button (🕸️) in the navigation bar to explore relationships:
 
 ![Knowledge Graph](docs/images/screenshots/28-knowledge-graph.png)
 
-**Figure 28: Knowledge graph visualization**
+**Figure 22: Knowledge graph visualization showing code relationships**
 
 **Relationship Types (FR.38):**
 
@@ -913,15 +889,11 @@ Execute complex queries across language boundaries:
 
 ### 7.4 Feature-Based Code Slicing
 
-Define logical feature domains and filter the codebase to show only related code:
-
-![Feature Slice Button](docs/images/screenshots/16-feature-slice-button.png)
-
-**Figure 29: Feature slice button in navigation bar**
+Define logical feature domains and filter the codebase to show only related code. Click the **Feature Slice** button (🧩) in the navigation bar:
 
 ![Feature Slice](docs/images/screenshots/27-feature-slice.png)
 
-**Figure 30: Feature-based code slicing interface**
+**Figure 23: Feature-based code slicing interface showing feature management**
 
 **Features (FR.35):**
 
@@ -1143,15 +1115,11 @@ Navigate bidirectionally between callers and callees:
 
 ### 9.1 Export Formats
 
-Export your code in multiple formats:
-
-![Export Button](docs/images/screenshots/12-export-button.png)
-
-**Figure 31: Export button in navigation bar**
+Export your code in multiple formats. Click the **Export** button (📤) in the navigation bar:
 
 ![Export Modal](docs/images/screenshots/29-export-modal.png)
 
-**Figure 32: Export modal with format options**
+**Figure 24: Export modal showing format and detail level options**
 
 **Supported Formats (FR.30):**
 
