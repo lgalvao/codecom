@@ -123,6 +123,7 @@ class StatisticsControllerIntegrationTest extends BaseIntegrationTest {
             assertTrue(stats.methodCount() >= 1, "Should have at least 1 method");
             
             // Verify totals are aggregated
+            // Note: Subtract 2 to account for potential line ending differences between written and parsed content
             assertTrue(
                 stats.totalLines() >= code1.split("\n").length + code2.split("\n").length - 2,
                 "Total lines should include both files"

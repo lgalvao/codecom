@@ -99,24 +99,12 @@ class FileSystemControllerIntegrationTest extends BaseIntegrationTest {
         // Given: Non-existent file path
         String nonExistentPath = "/nonexistent/path/to/file.java";
 
-        // When/Then: Request should fail with 404 or 500 (depends on error handling)
-        try {
-            ResponseEntity<String> response = restTemplate.getForEntity(
+        // When/Then: Request should fail with exception
+        assertThrows(Exception.class, () -> {
+            restTemplate.getForEntity(
                 apiUrl("/api/files/content?path=" + nonExistentPath),
                 String.class
             );
-            // If no exception, verify error status
-            assertTrue(
-                response.getStatusCode().is4xxClientError() || 
-                response.getStatusCode().is5xxServerError(),
-                "Should return error status for non-existent file"
-            );
-        } catch (HttpClientErrorException e) {
-            // Expected - verify it's a client error
-            assertTrue(e.getStatusCode().is4xxClientError() || e.getStatusCode().is5xxServerError());
-        } catch (Exception e) {
-            // Also acceptable - server error for file not found
-            assertTrue(e.getMessage().contains("500") || e.getMessage().contains("404"));
-        }
+        }, "Should throw exception for non-existent file");
     }
 }

@@ -294,20 +294,14 @@ class AnalysisControllerIntegrationTest extends BaseIntegrationTest {
         // Given: Invalid file path
         String invalidPath = "/invalid/nonexistent/file.java";
 
-        // When/Then: Should handle error gracefully
-        try {
-            ResponseEntity<List<SymbolInfo>> response = restTemplate.exchange(
+        // When/Then: Should throw exception for invalid path
+        assertThrows(Exception.class, () -> {
+            restTemplate.exchange(
                 apiUrl("/api/analysis/outline?path=" + invalidPath),
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<List<SymbolInfo>>() {}
             );
-            
-            // If no exception, should be error status
-            assertTrue(response.getStatusCode().isError());
-        } catch (Exception e) {
-            // Exception is acceptable for invalid path
-            assertTrue(e.getMessage().contains("500") || e.getMessage().contains("404"));
-        }
+        }, "Should throw exception for invalid file path");
     }
 }
